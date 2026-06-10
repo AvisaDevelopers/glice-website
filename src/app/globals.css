@@ -1,0 +1,15 @@
+@import "tailwindcss";
+@import "../styles/fonts.css" layer(base);
+@import "../styles/theme.css" layer(components);
+
+@theme inline {
+  --color-background: #111111;
+  --color-surface: #1a1a1a;
+  --color-surface2: #1e1e1e;
+  --color-primary: #32e6a1;
+  --color-textMain: #f5f5f5;
+  --color-textMuted: #a3a3a3;
+  --color-hair: rgba(255, 255, 255, 0.1);
+  --font-sans: var(--font-poppins), "Noto Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-fira-code), ui-monospace, monospace;
+}
