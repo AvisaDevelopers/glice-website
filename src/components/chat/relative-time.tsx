@@ -16,7 +16,7 @@ function tickIntervalMs(date: Date, now: number): number {
 }
 
 export function RelativeTime({ date, className }: RelativeTimeProps) {
-  const [now, setNow] = useState(() => Date.now());
+  const [now, setNow] = useState<number | null>(null);
 
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout> | null = null;
@@ -33,9 +33,16 @@ export function RelativeTime({ date, className }: RelativeTimeProps) {
     };
   }, [date]);
 
+  const label =
+    now === null ? "\u00a0" : formatRelativeTime(date, now);
+
   return (
-    <time dateTime={date.toISOString()} className={className}>
-      {formatRelativeTime(date, now)}
+    <time
+      dateTime={date.toISOString()}
+      className={className}
+      suppressHydrationWarning
+    >
+      {label}
     </time>
   );
 }

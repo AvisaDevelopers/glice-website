@@ -32,7 +32,7 @@ export default async function RootLayout({
           rel="stylesheet"
         />
       </head>
-      <body className={initialUser ? "is-logged-in" : undefined}>
+      <body>
         <Providers initialUser={initialUser}>
           <SiteChrome>{children}</SiteChrome>
         </Providers>

@@ -1,26 +1,49 @@
 "use client";
 
-import Image from "next/image";
-import { useEffect, useState } from "react";
+import { CallChatPanel } from "@/components/video/call-chat-panel";
+import { MediaPermissionGate } from "@/components/video/media-permission-gate";
+import { NearbySearchMotion } from "@/components/video/match-search-motion";
 import { useUiSession } from "@/components/site/ui-session-provider";
+import { useMediaStream } from "@/features/video/hooks/use-media-stream";
+import { useMounted } from "@/hooks/use-mounted";
+import { AnimatePresence, motion } from "framer-motion";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { AuthModal } from "./auth-modal";
 import { PreferenceModal } from "./preference-modal";
 
 const PARTNERS = [
-  { name: "Mia", location: "London, UK", initial: "M" },
-  { name: "Alex", location: "Berlin, DE", initial: "A" },
-  { name: "Sofia", location: "Madrid, ES", initial: "S" },
-  { name: "Jordan", location: "Toronto, CA", initial: "J" },
-  { name: "Yuki", location: "Tokyo, JP", initial: "Y" },
+  { name: "Mia", distance: "1.2 km", initial: "M" },
+  { name: "Alex", distance: "3.8 km", initial: "A" },
+  { name: "Sofia", distance: "0.9 km", initial: "S" },
+  { name: "Jordan", distance: "5.1 km", initial: "J" },
+  { name: "Yuki", distance: "2.4 km", initial: "Y" },
 ];
 
-type CallStage = "idle" | "searching" | "connected";
+type CallStage = "idle" | "searching" | "connected" | "feedback";
 
 const GENDER_OPTIONS = ["Everyone", "Women", "Men"] as const;
 
+const SEARCH_MS = 3000;
+const REMATCH_MS = 2400;
+
+function remoteBadge(callStage: CallStage, partnerName: string) {
+  if (callStage === "searching") return "Searching…";
+  if (callStage === "connected" || callStage === "feedback") return partnerName;
+  return "Waiting";
+}
+
 export function VideoHero() {
   const { isLoggedIn, openAuth } = useUiSession();
-  const [liveCount, setLiveCount] = useState(2847);
+  const {
+    localRef,
+    status: mediaStatus,
+    cameraEnabled,
+    requestAccess,
+    setMuted,
+    setCameraEnabled,
+    syncVideo,
+  } = useMediaStream();
+
   const [gender, setGender] = useState<(typeof GENDER_OPTIONS)[number]>("Everyone");
   const [genderMenuOpen, setGenderMenuOpen] = useState(false);
   const [prefOpen, setPrefOpen] = useState(false);
@@ -29,233 +52,387 @@ export function VideoHero() {
   const [maxDistance, setMaxDistance] = useState(50);
   const [callStage, setCallStage] = useState<CallStage>("idle");
   const [partner, setPartner] = useState(PARTNERS[0]);
-  const [isBusy, setIsBusy] = useState(false);
+  const [isMuted, setIsMuted] = useState(false);
+  const genderMenuRef = useRef<HTMLDivElement>(null);
+  const mounted = useMounted();
 
-  useEffect(() => {
-    const interval = window.setInterval(() => {
-      setLiveCount((count) => count + Math.floor(Math.random() * 5) - 2);
-    }, 4000);
-    return () => window.clearInterval(interval);
-  }, []);
+  const mediaReady = mounted && mediaStatus === "ready";
+  const showPermissionGate =
+    mounted &&
+    (mediaStatus === "idle" ||
+      mediaStatus === "denied" ||
+      mediaStatus === "error" ||
+      mediaStatus === "requesting");
+  const isCheckingMedia = !mounted || mediaStatus === "checking";
+  const isBusy = callStage === "searching";
+  const inCall = callStage === "connected";
+  const showChat = inCall;
 
   useEffect(() => {
     if (!isLoggedIn) {
-      setCallStage("idle");
-      setIsBusy(false);
+      queueMicrotask(() => {
+        setCallStage("idle");
+        setGenderMenuOpen(false);
+      });
     }
   }, [isLoggedIn]);
 
-  const preferenceLabel = `${minAge}–${maxAge} · ${maxDistance} km`;
+  useEffect(() => {
+    if (mediaReady) syncVideo();
+  }, [callStage, mediaReady, syncVideo, cameraEnabled]);
+
+  useEffect(() => {
+    if (!genderMenuOpen) return;
+
+    const close = (event: MouseEvent) => {
+      if (
+        genderMenuRef.current &&
+        !genderMenuRef.current.contains(event.target as Node)
+      ) {
+        setGenderMenuOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", close);
+    return () => document.removeEventListener("mousedown", close);
+  }, [genderMenuOpen]);
+
+  const pickPartner = useCallback(() => {
+    return PARTNERS[Math.floor(Math.random() * PARTNERS.length)] ?? PARTNERS[0];
+  }, []);
+
+  const beginSearch = useCallback(
+    (duration = SEARCH_MS) => {
+      setCallStage("searching");
+      window.setTimeout(() => {
+        setPartner(pickPartner());
+        setCallStage("connected");
+      }, duration);
+    },
+    [pickPartner],
+  );
 
   const startVideo = () => {
+    if (!mediaReady) return;
     if (!isLoggedIn) {
       openAuth("login");
       return;
     }
     if (isBusy) return;
-
-    setIsBusy(true);
-    setCallStage("searching");
-
-    window.setTimeout(() => {
-      const nextPartner =
-        PARTNERS[Math.floor(Math.random() * PARTNERS.length)] ?? PARTNERS[0];
-      setPartner(nextPartner);
-      setCallStage("connected");
-      setIsBusy(false);
-    }, 2200);
+    beginSearch();
   };
 
-  const cancelSearch = () => {
-    setCallStage("idle");
-    setIsBusy(false);
-  };
+  const cancelSearch = () => setCallStage("idle");
 
   const endCall = () => {
     setCallStage("idle");
-    setIsBusy(false);
+    setGenderMenuOpen(false);
   };
 
-  const nextPartner = () => {
-    setCallStage("searching");
-    setIsBusy(true);
-    window.setTimeout(() => {
-      const next =
-        PARTNERS[Math.floor(Math.random() * PARTNERS.length)] ?? PARTNERS[0];
-      setPartner(next);
-      setCallStage("connected");
-      setIsBusy(false);
-    }, 1500);
+  const handleNext = () => setCallStage("feedback");
+
+  const completeFeedback = () => beginSearch(REMATCH_MS);
+
+  const toggleMute = () => {
+    const next = !isMuted;
+    setIsMuted(next);
+    setMuted(next);
+  };
+
+  const toggleCamera = () => {
+    setCameraEnabled(!cameraEnabled);
   };
 
   return (
     <>
       <section className="video-hero" id="videoHero">
-        <div className="video-hero-inner">
-          <div className="hero-shell">
-            <div className="hero-stage">
-              <div className="hero-stage-shine" aria-hidden="true" />
+        {showPermissionGate && (
+          <MediaPermissionGate
+            status={mediaStatus}
+            onRequest={requestAccess}
+          />
+        )}
 
-              <div className="hero-stage-center hero-guest-ui">
-                <div className="hero-stage-mark">
-                  <Image
-                    src="/icons/transparent_icon.png"
-                    alt=""
-                    width={56}
-                    height={56}
-                    className="hero-stage-logo"
-                  />
-                  <span className="hero-stage-wordmark">Glice</span>
+        <div
+          className={`video-hero-inner${showPermissionGate ? " video-hero-inner--locked" : ""}${isCheckingMedia ? " video-hero-inner--checking" : ""}`}
+          aria-hidden={showPermissionGate}
+        >
+          <div className="hero-dual-shell">
+            <div className="hero-dual-wrap">
+            <div className="hero-dual">
+              <div className="hero-panel hero-panel--remote">
+                <div
+                  className={`hero-panel-badge hero-panel-badge--remote${callStage === "searching" || inCall || callStage === "feedback" ? " hero-panel-badge--active" : ""}`}
+                >
+                  <span className="hero-panel-badge-dot" aria-hidden />
+                  {remoteBadge(callStage, partner.name)}
+                  {(callStage === "connected" || callStage === "feedback") && (
+                    <span className="hero-panel-badge-meta">
+                      {partner.distance}
+                    </span>
+                  )}
                 </div>
-                <div className="hero-live-pill">
-                  <span className="hero-live-dot" aria-hidden="true" />
-                  <span className="hero-live-pill-text">
-                    <strong>{liveCount.toLocaleString()}</strong> are matching now
-                  </span>
-                </div>
-              </div>
 
-              <div className="hero-video hero-user-ui">
                 {callStage === "idle" && (
-                  <div className="vc-stage">
-                    <div className="vc-local-placeholder">
-                      <i className="ri-camera-line" aria-hidden="true" />
-                      <span>Camera preview</span>
+                  <div className="hero-panel-idle hero-panel-idle--remote">
+                    <div className="hero-panel-idle-icon" aria-hidden>
+                      <i className="ri-radar-line" />
                     </div>
+                    <p>Your match appears here</p>
+                    <span>Press Start to find people within {maxDistance} km</span>
                   </div>
                 )}
 
-                {callStage === "searching" && (
-                  <div className="vc-stage">
-                    <div className="vc-local-placeholder">
-                      <i className="ri-camera-line" aria-hidden="true" />
-                    </div>
-                    <div className="vc-searching-ui">
-                      <div className="vc-spinner" aria-hidden="true" />
-                      <p>Finding someone for you…</p>
+                <AnimatePresence>
+                  {callStage === "searching" && (
+                    <motion.div
+                      key="searching"
+                      className="hero-panel-overlay hero-panel-overlay--search"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                    >
+                      <NearbySearchMotion radiusKm={maxDistance} />
                       <button
                         type="button"
                         className="vc-cancel-search"
                         onClick={cancelSearch}
                       >
-                        Cancel
+                        Cancel search
                       </button>
-                    </div>
-                  </div>
-                )}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
 
-                {callStage === "connected" && (
-                  <div className="vc-stage">
-                    <div className="vc-remote-placeholder">
-                      <div className="vc-remote-avatar">{partner.initial}</div>
-                      <span className="vc-remote-name">{partner.name}</span>
-                      <span className="vc-remote-location">{partner.location}</span>
-                    </div>
-                    <div className="vc-connected-badge">Live</div>
-                    <div className="vc-local-pip" />
-                  </div>
-                )}
+                <AnimatePresence>
+                  {inCall && (
+                    <motion.div
+                      key={`partner-${partner.name}`}
+                      className="hero-panel-overlay hero-panel-overlay--connected"
+                      initial={{ opacity: 0, scale: 1.03, filter: "blur(8px)" }}
+                      animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+                    >
+                      <div className="vc-remote-placeholder vc-remote-placeholder--live">
+                        <motion.div
+                          className="vc-remote-avatar"
+                          initial={{ scale: 0.65, opacity: 0 }}
+                          animate={{ scale: 1, opacity: 1 }}
+                          transition={{ delay: 0.1, duration: 0.45 }}
+                        >
+                          {partner.initial}
+                        </motion.div>
+                        <span className="vc-remote-name">{partner.name}</span>
+                        <span className="vc-remote-location">
+                          <i className="ri-map-pin-2-fill" aria-hidden />
+                          {partner.distance} away
+                        </span>
+                      </div>
+                      <div className="vc-connected-badge">Live</div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                <AnimatePresence>
+                  {callStage === "feedback" && (
+                    <motion.div
+                      key="feedback"
+                      className="hero-panel-overlay hero-panel-overlay--feedback"
+                      initial={{ opacity: 0, y: 12 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.35 }}
+                    >
+                      <div className="hero-feedback-card">
+                        <p className="hero-feedback-eyebrow">Rate this match</p>
+                        <h3 className="hero-feedback-title">
+                          How was your chat with {partner.name}?
+                        </h3>
+                        <p className="hero-feedback-desc">
+                          Your feedback improves future matches near you.
+                        </p>
+                        <div className="hero-feedback-actions">
+                          <button
+                            type="button"
+                            className="hero-feedback-btn hero-feedback-btn--like"
+                            onClick={completeFeedback}
+                          >
+                            <i className="ri-heart-fill" aria-hidden />
+                            Like
+                          </button>
+                          <button
+                            type="button"
+                            className="hero-feedback-btn hero-feedback-btn--pass"
+                            onClick={completeFeedback}
+                          >
+                            <i className="ri-thumb-down-line" aria-hidden />
+                            Pass
+                          </button>
+                        </div>
+                        <button
+                          type="button"
+                          className="hero-feedback-skip"
+                          onClick={completeFeedback}
+                        >
+                          Skip feedback
+                        </button>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
 
-              {callStage === "connected" && (
-                <div className="hero-dock hero-dock--call hero-user-ui">
-                  <div className="hero-dock-connected">
-                    <button type="button" className="hero-dock-action" aria-label="Mute">
-                      <i className="ri-mic-line" />
-                    </button>
-                    <button
-                      type="button"
-                      className="hero-dock-action hero-dock-action--next"
-                      aria-label="Next"
-                      onClick={nextPartner}
-                    >
-                      <i className="ri-skip-forward-fill" />
-                      <span>Next</span>
-                    </button>
-                    <button
-                      type="button"
-                      className="hero-dock-action hero-dock-action--end"
-                      aria-label="End call"
-                      onClick={endCall}
-                    >
-                      <i className="ri-phone-fill" />
-                    </button>
-                  </div>
+              <div className="hero-panel hero-panel--local">
+                <div className="hero-panel-badge hero-panel-badge--local">
+                  <span>You</span>
+                  {!cameraEnabled && (
+                    <span className="hero-panel-badge-meta hero-panel-badge-meta--warn">
+                      Camera off
+                    </span>
+                  )}
+                  {isMuted && (
+                    <span className="hero-panel-badge-meta hero-panel-badge-meta--warn">
+                      Muted
+                    </span>
+                  )}
                 </div>
-              )}
+
+                <div className="hero-panel-media">
+                  <video
+                    ref={localRef}
+                    className={`hero-panel-video${!cameraEnabled ? " hero-panel-video--hidden" : ""}`}
+                    playsInline
+                    muted
+                    autoPlay
+                    aria-label="Your camera"
+                  />
+                </div>
+
+                {!cameraEnabled && (
+                  <div className="hero-panel-camera-off">
+                    <i className="ri-camera-off-line" aria-hidden />
+                    <p>Camera is off</p>
+                    <span>Others cannot see your video</span>
+                  </div>
+                )}
+
+                <CallChatPanel partnerName={partner.name} active={showChat} />
+              </div>
+            </div>
             </div>
 
-            <aside className="hero-filters" aria-label="Match filters">
-              <div className={`hero-filters-card${isBusy ? " is-busy" : ""}`}>
-                <div className="hero-filters-brand">
-                  <span
-                    className="nav-brand-mark hero-filters-mark"
-                    aria-hidden="true"
-                  />
-                  <span className="hero-filters-name">Glice</span>
-                </div>
-                <p className="hero-filters-desc">Live video. Real connections.</p>
-
-                <div className="hero-filter-grid">
-                  <div className="hero-filter-item">
+            <div className="hero-toolbar" role="toolbar" aria-label="Video controls">
+              {inCall ? (
+                <>
+                  <button
+                    type="button"
+                    className={`hero-toolbar-btn${isMuted ? " is-active" : ""}`}
+                    onClick={toggleMute}
+                    aria-label={isMuted ? "Unmute" : "Mute"}
+                    aria-pressed={isMuted}
+                  >
+                    <i
+                      className={isMuted ? "ri-mic-off-line" : "ri-mic-line"}
+                      aria-hidden
+                    />
+                  </button>
+                  <button
+                    type="button"
+                    className={`hero-toolbar-btn${!cameraEnabled ? " is-active" : ""}`}
+                    onClick={toggleCamera}
+                    aria-label={cameraEnabled ? "Turn camera off" : "Turn camera on"}
+                    aria-pressed={!cameraEnabled}
+                  >
+                    <i
+                      className={
+                        cameraEnabled ? "ri-camera-line" : "ri-camera-off-line"
+                      }
+                      aria-hidden
+                    />
+                  </button>
+                  <button
+                    type="button"
+                    className="hero-toolbar-btn hero-toolbar-btn--next"
+                    onClick={handleNext}
+                    aria-label="Next person"
+                  >
+                    <i className="ri-skip-forward-fill" aria-hidden />
+                    <span>Next</span>
+                  </button>
+                  <button
+                    type="button"
+                    className="hero-toolbar-btn hero-toolbar-btn--end"
+                    onClick={endCall}
+                    aria-label="End call"
+                  >
+                    <i className="ri-phone-fill" aria-hidden />
+                  </button>
+                </>
+              ) : callStage === "feedback" ? (
+                <p className="hero-toolbar-hint">
+                  Choose Like or Pass above to find your next match
+                </p>
+              ) : (
+                <>
+                  <div className="hero-toolbar-menu-wrap" ref={genderMenuRef}>
                     <button
                       type="button"
-                      className="hero-filter-btn"
+                      className="hero-toolbar-btn"
                       aria-expanded={genderMenuOpen}
                       aria-haspopup="listbox"
+                      disabled={isBusy}
                       onClick={() => setGenderMenuOpen((open) => !open)}
                     >
-                      <i className="ri-user-line" aria-hidden="true" />
-                      <span className="hero-filter-btn-label">Gender</span>
-                      <span className="hero-filter-btn-value">{gender}</span>
-                      <i className="ri-arrow-down-s-line hero-filter-chevron" aria-hidden="true" />
+                      <i className="ri-user-line" aria-hidden />
+                      <span>{gender}</span>
+                      <i className="ri-arrow-down-s-line" aria-hidden />
                     </button>
-                    <div
-                      className={`hero-filter-menu${genderMenuOpen ? "" : " is-hidden"}`}
-                      role="listbox"
-                    >
-                      {GENDER_OPTIONS.map((option) => (
-                        <button
-                          key={option}
-                          type="button"
-                          className={`hero-filter-option${gender === option ? " is-active" : ""}`}
-                          onClick={() => {
-                            setGender(option);
-                            setGenderMenuOpen(false);
-                          }}
-                        >
-                          {option}
-                        </button>
-                      ))}
-                    </div>
+                    {genderMenuOpen && (
+                      <div className="hero-toolbar-menu" role="listbox">
+                        {GENDER_OPTIONS.map((option) => (
+                          <button
+                            key={option}
+                            type="button"
+                            role="option"
+                            aria-selected={gender === option}
+                            className={`hero-toolbar-menu-item${gender === option ? " is-active" : ""}`}
+                            onClick={() => {
+                              setGender(option);
+                              setGenderMenuOpen(false);
+                            }}
+                          >
+                            {option}
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </div>
 
-                  <div className="hero-filter-item">
-                    <button
-                      type="button"
-                      className="hero-filter-btn"
-                      aria-expanded={prefOpen}
-                      aria-haspopup="dialog"
-                      onClick={() => setPrefOpen(true)}
-                    >
-                      <i className="ri-equalizer-line" aria-hidden="true" />
-                      <span className="hero-filter-btn-label">Preference</span>
-                      <span className="hero-filter-btn-value">{preferenceLabel}</span>
-                      <i className="ri-arrow-down-s-line hero-filter-chevron" aria-hidden="true" />
-                    </button>
-                  </div>
-                </div>
+                  <button
+                    type="button"
+                    className="hero-toolbar-btn"
+                    disabled={isBusy}
+                    onClick={() => setPrefOpen(true)}
+                  >
+                    <i className="ri-equalizer-line" aria-hidden />
+                    <span>
+                      {minAge}–{maxAge} · {maxDistance} km
+                    </span>
+                  </button>
 
-                <button
-                  type="button"
-                  className="hero-start-chat"
-                  onClick={startVideo}
-                >
-                  <i className="ri-vidicon-fill" aria-hidden="true" />
-                  Start video chat
-                </button>
-              </div>
-            </aside>
+                  <button
+                    type="button"
+                    className="hero-toolbar-btn hero-toolbar-btn--start"
+                    onClick={startVideo}
+                    disabled={isBusy || !mediaReady}
+                  >
+                    <i className="ri-vidicon-fill" aria-hidden />
+                    <span>{isBusy ? "Searching…" : "Start"}</span>
+                  </button>
+                </>
+              )}
+            </div>
           </div>
         </div>
       </section>

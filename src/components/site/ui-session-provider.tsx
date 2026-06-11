@@ -28,8 +28,6 @@ import {
 
   useEffect,
 
-  useLayoutEffect,
-
   useMemo,
 
   useState,
@@ -226,14 +224,10 @@ export function UiSessionProvider({
 
 
 
-  useLayoutEffect(() => {
-
+  useEffect(() => {
     const body = document.body;
-
     body.classList.toggle("is-logged-in", isLoggedIn);
-
     body.classList.toggle("video-hero-active", pathname === "/");
-
   }, [isLoggedIn, pathname]);
 
 

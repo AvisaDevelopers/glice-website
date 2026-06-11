@@ -1,6 +1,7 @@
 "use client";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { PageTransition } from "@/components/layout/page-transition";
 import { ChatRouteEffect } from "@/components/site/chat-route-effect";
 import { SiteEffects } from "@/components/site/site-effects";
 import { UiSessionProvider } from "@/components/site/ui-session-provider";
@@ -36,7 +37,7 @@ export function Providers({
           </Suspense>
           <ChatRouteEffect />
           <SiteEffects />
-          {children}
+          <PageTransition>{children}</PageTransition>
         </UiSessionProvider>
       </GoogleAuthProvider>
     </QueryClientProvider>
