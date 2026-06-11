@@ -10,6 +10,7 @@ import type {
   UserLocation,
 } from "../types";
 import { normalizeMediaUrlString } from "./resolve-media-url";
+import { isVideoFileUrl } from "./video-media";
 
 function parseMessageStatus(status: string): MessageStatus {
   switch (status) {
@@ -112,15 +113,22 @@ export function parseAttachment(
     "thumb",
   );
 
+  const type = parseAttachmentType(String(json.type ?? "image"));
   const resolvedUrl = url || thumbnail;
-  const resolvedThumb = thumbnail || url;
+  let resolvedThumb = thumbnail || url;
+
+  if (type === "video" && isVideoFileUrl(resolvedThumb) && resolvedUrl) {
+    resolvedThumb =
+      thumbnail && !isVideoFileUrl(thumbnail) ? thumbnail : "";
+  }
+
   if (!resolvedUrl && !resolvedThumb) return undefined;
 
   return {
     id: String(json._id ?? json.id ?? ""),
     url: resolvedUrl,
     thumbnail: resolvedThumb,
-    type: parseAttachmentType(String(json.type ?? "image")),
+    type,
     size: Number(json.size ?? 0),
     title: String(json.title ?? "Chat"),
     userId: String(json.userId ?? ""),
@@ -237,9 +245,13 @@ export function attachmentToPayload(
   const url = att.url?.startsWith("blob:")
     ? ""
     : normalizeMediaUrlString(att.url);
-  const thumbnail = att.thumbnail?.startsWith("blob:")
+  let thumbnail = att.thumbnail?.startsWith("blob:")
     ? ""
     : normalizeMediaUrlString(att.thumbnail || url);
+
+  if (att.type === "video" && isVideoFileUrl(thumbnail)) {
+    thumbnail = "";
+  }
 
   return {
     id: att.id ?? "",
@@ -249,7 +261,7 @@ export function attachmentToPayload(
     pinned: att.pinned ?? false,
     userId: att.userId,
     type: att.type,
-    thumbnail: thumbnail || url,
+    thumbnail: att.type === "video" ? thumbnail : thumbnail || url,
     verificationStatus: "approved",
     isAdult: att.isAdult ?? false,
   };

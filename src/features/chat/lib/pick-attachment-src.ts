@@ -3,6 +3,7 @@ import {
   mediaDisplayCandidates,
   resolveMediaUrl,
 } from "./resolve-media-url";
+import { isImageDisplayUrl, isVideoFileUrl } from "./video-media";
 
 function isRemoteUrl(url?: string | null): boolean {
   if (!url?.trim()) return false;
@@ -26,14 +27,44 @@ export function attachmentImageCandidates(attachment: ChatAttachment): string[] 
   const out: string[] = [];
 
   for (const item of raw) {
+    if (!item) continue;
+    if (attachment.type === "video" && isVideoFileUrl(item)) continue;
+    if (attachment.type === "video" && item.startsWith("blob:")) continue;
+    if (!isImageDisplayUrl(item) && !item.startsWith("data:image")) continue;
+
     for (const candidate of mediaDisplayCandidates(item)) {
       if (!candidate || seen.has(candidate)) continue;
+      if (isVideoFileUrl(candidate)) continue;
       seen.add(candidate);
       out.push(candidate);
     }
   }
 
   return out;
+}
+
+/** JPEG poster for video bubbles — never a raw .mp4 URL. */
+export function pickVideoPosterSrc(attachment: ChatAttachment): string {
+  for (const item of [
+    attachment.thumbnail,
+    attachment.localPreview,
+  ]) {
+    if (!item) continue;
+    if (item.startsWith("data:image")) return item;
+    const resolved = resolveMediaUrl(item);
+    if (resolved && isImageDisplayUrl(resolved)) {
+      return mediaDisplayCandidates(resolved)[0] ?? resolved;
+    }
+  }
+  return attachmentImageCandidates(attachment)[0] ?? "";
+}
+
+export function pickVideoPlayUrl(attachment: ChatAttachment): string {
+  const raw =
+    attachment.url?.trim() ||
+    attachment.localPreview?.trim() ||
+    "";
+  return resolveMediaUrl(raw);
 }
 
 export function pickAttachmentImageSrc(attachment: ChatAttachment): string {

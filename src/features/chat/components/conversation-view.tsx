@@ -155,7 +155,7 @@ export function ConversationView({ roomId, onBack }: ConversationViewProps) {
             </div>
           )}
 
-          <div className="flex flex-col">
+          <div className="flex w-full flex-col">
             {messages.map((message, index) => {
               const isSentByMe = message.sender === user?._id;
               const isLastSame =

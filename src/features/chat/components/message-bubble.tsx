@@ -6,7 +6,7 @@ import {
   ChatMessage,
   ChatMessageMeta,
 } from "@/components/chat/message";
-import { Check, CheckCheck, Play } from "lucide-react";
+import { Check, CheckCheck } from "lucide-react";
 import { formatMessageTime } from "../lib/format";
 import { attachmentCaptionText } from "../lib/attachment-text";
 import {
@@ -16,6 +16,7 @@ import {
 import { resolveMediaUrl } from "../lib/resolve-media-url";
 import type { ChatMessage as ChatMessageType } from "../types";
 import { ChatImage } from "./chat-image";
+import { ChatVideo } from "./chat-video";
 import { VoiceMessagePlayer } from "./voice-message-player";
 
 type MessageBubbleProps = {
@@ -40,8 +41,14 @@ export function MessageBubble({
   const imageSrc = attachment ? pickAttachmentImageSrc(attachment) : "";
   const previewUrl = attachment ? pickAttachmentPreviewUrl(attachment) : "";
   const hasAttachment =
-    Boolean(attachment && (imageSrc || attachment.url || attachment.type === "audio")) &&
-    !isDeleted;
+    Boolean(
+      attachment &&
+        (attachment.type === "video"
+          ? attachment.url || attachment.localPreview || attachment.thumbnail
+          : attachment.type === "audio"
+            ? attachment.url || attachment.localPreview
+            : imageSrc || attachment.url),
+    ) && !isDeleted;
   const uploadPct = attachment?.uploadProgress ?? 0;
   const isUploading = loading || message.status === "sending";
   const captionText = attachment
@@ -102,27 +109,10 @@ export function MessageBubble({
               />
             )}
             {attachment.type === "video" && (
-              <a
-                href={resolveMediaUrl(attachment.url)}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="relative block"
-              >
-                {imageSrc ? (
-                  <ChatImage
-                    key={imageSrc}
-                    attachment={attachment}
-                    src={imageSrc}
-                    fallbackSrc={attachment.url || attachment.thumbnail}
-                    eager={Boolean(attachment.localPreview)}
-                  />
-                ) : (
-                  <span className="chat-media-placeholder" />
-                )}
-                <span className="absolute inset-0 flex items-center justify-center bg-black/30">
-                  <Play className="h-10 w-10 fill-white text-white" />
-                </span>
-              </a>
+              <ChatVideo
+                attachment={attachment}
+                eager={Boolean(attachment.localPreview)}
+              />
             )}
             {attachment.type === "audio" && (
               <VoiceMessagePlayer

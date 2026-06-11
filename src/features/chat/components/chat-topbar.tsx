@@ -2,38 +2,56 @@
 
 import { UserAvatar } from "@/components/chat/user-avatar";
 import { useUiSession } from "@/components/site/ui-session-provider";
-import { ArrowLeft, LogOut } from "lucide-react";
+import { ArrowLeft, MessageSquare } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 export function ChatTopbar() {
   const router = useRouter();
-  const { userName, logout } = useUiSession();
+  const searchParams = useSearchParams();
+  const activeRoomId = searchParams.get("room");
+  const { userName } = useUiSession();
+
+  const goToInbox = () => {
+    router.push("/messages", { scroll: false });
+  };
 
   return (
     <header className="chat-topbar">
-      <Link href="/" className="chat-topbar-btn" aria-label="Back">
-        <ArrowLeft className="h-5 w-5" />
-      </Link>
-
-      <div className="chat-topbar-title">
-        <span className="chat-topbar-mark" aria-hidden="true" />
-        <h1>Messages</h1>
-      </div>
-
-      <div className="flex items-center gap-2">
-        <UserAvatar name={userName} size="sm" />
-        <button
-          type="button"
-          onClick={() => {
-            logout();
-            router.push("/");
+      <nav className="chat-topbar-nav" aria-label="Messages navigation">
+        <Link
+          href="/messages"
+          onClick={(e) => {
+            if (activeRoomId) {
+              e.preventDefault();
+              goToInbox();
+            }
           }}
-          className="chat-topbar-btn chat-topbar-btn--text"
+          className="chat-topbar-messages-link"
         >
-          <LogOut className="h-3.5 w-3.5" />
-          <span className="hidden sm:inline">Log out</span>
-        </button>
+          <MessageSquare className="h-5 w-5 shrink-0" aria-hidden="true" />
+          <span className="chat-topbar-mark" aria-hidden="true" />
+          <h1>Messages</h1>
+        </Link>
+
+        {activeRoomId ? (
+          <button
+            type="button"
+            onClick={goToInbox}
+            className="chat-topbar-btn"
+            aria-label="Back to chats"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </button>
+        ) : (
+          <Link href="/" className="chat-topbar-btn" aria-label="Back to home">
+            <ArrowLeft className="h-5 w-5" />
+          </Link>
+        )}
+      </nav>
+
+      <div className="chat-topbar-actions">
+        <UserAvatar name={userName} size="sm" />
       </div>
     </header>
   );

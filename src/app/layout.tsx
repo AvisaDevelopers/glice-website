@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { SiteChrome } from "@/components/layout/site-chrome";
+import { getServerSessionUser } from "@/features/auth/lib/get-server-session";
 import { Providers } from "@/providers";
 import "./globals.css";
 
@@ -15,11 +16,13 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const initialUser = await getServerSessionUser();
+
   return (
     <html lang="en">
       <head>
@@ -29,8 +32,8 @@ export default function RootLayout({
           rel="stylesheet"
         />
       </head>
-      <body>
-        <Providers>
+      <body className={initialUser ? "is-logged-in" : undefined}>
+        <Providers initialUser={initialUser}>
           <SiteChrome>{children}</SiteChrome>
         </Providers>
       </body>

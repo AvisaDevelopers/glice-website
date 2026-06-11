@@ -138,6 +138,8 @@ export async function uploadChatFile(
 
       xhr.open("POST", url);
 
+      xhr.timeout = 4 * 60 * 1000;
+
       if (token) xhr.setRequestHeader("authorization", token);
 
       xhr.setRequestHeader("userid", userId);
@@ -204,6 +206,9 @@ export async function uploadChatFile(
 
 
       xhr.onerror = () => reject(new Error("Upload network error"));
+
+      xhr.ontimeout = () =>
+        reject(new Error("Upload timed out. Try a shorter or smaller video."));
 
       xhr.send(formData);
 

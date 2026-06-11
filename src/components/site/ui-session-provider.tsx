@@ -1,7 +1,10 @@
 "use client";
 
-import { getUser } from "@/features/auth/api/auth-api";
-import { refreshAccessToken } from "@/features/auth/lib/refresh-auth";
+import {
+  clearAuthSession,
+  SESSION_EXPIRED_EVENT,
+} from "@/features/auth/lib/persist-session";
+import { buildSessionCookieValue } from "@/features/auth/lib/session-cookie";
 import { tokenStorage } from "@/features/auth/lib/token-storage";
 import { chatSocket } from "@/features/chat/services/socket-service";
 import type { GliceUser } from "@/features/auth/types";
@@ -41,17 +44,21 @@ function displayName(user: GliceUser | null): string {
   return user.email.split("@")[0] || "User";
 }
 
+function readClientStoredUser(): GliceUser | null {
+  return tokenStorage.getUser();
+}
+
 export function UiSessionProvider({
   children,
+  initialUser,
 }: {
   children: React.ReactNode;
+  initialUser: GliceUser | null;
 }) {
   const pathname = usePathname();
-  const [isInitializing, setIsInitializing] = useState(true);
-  const [isLoggedIn, setIsLoggedIn] = useState(() =>
-    tokenStorage.hasPersistedSession(),
-  );
-  const [user, setUser] = useState<GliceUser | null>(null);
+  const [user, setUser] = useState<GliceUser | null>(initialUser);
+  const [isLoggedIn, setIsLoggedIn] = useState(Boolean(initialUser));
+  const [isInitializing, setIsInitializing] = useState(!initialUser);
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [authModalMode, setAuthModalMode] = useState<AuthModalMode>(null);
 
@@ -64,41 +71,48 @@ export function UiSessionProvider({
     body.classList.toggle("video-hero-active", pathname === "/");
   }, [isLoggedIn, pathname]);
 
-  useEffect(() => {
-    let cancelled = false;
+  useLayoutEffect(() => {
+    if (initialUser) {
+      setIsInitializing(false);
+      return;
+    }
 
-    async function restoreSession() {
-      if (!tokenStorage.hasPersistedSession()) {
-        if (!cancelled) setIsInitializing(false);
-        return;
-      }
+    let storedUser = readClientStoredUser();
 
-      try {
-        const email = tokenStorage.getUserEmail();
-        if (!email) return;
-
-        const accessToken = await refreshAccessToken();
-        if (!accessToken) return;
-
-        const restoredUser = await getUser(email);
-        if (cancelled) return;
-
-        setUser(restoredUser);
-        setIsLoggedIn(true);
-      } catch {
-        tokenStorage.clear();
-        if (!cancelled) {
-          setUser(null);
-          setIsLoggedIn(false);
-        }
-      } finally {
-        if (!cancelled) setIsInitializing(false);
+    if (!storedUser) {
+      const email = tokenStorage.getUserEmail();
+      if (email && tokenStorage.hasAccessToken()) {
+        storedUser = {
+          _id: "",
+          email,
+          name: email.split("@")[0] || "User",
+        };
+        tokenStorage.setUser(storedUser);
+        document.cookie = buildSessionCookieValue(storedUser);
       }
     }
 
-    restoreSession();
+    if (storedUser) {
+      setUser(storedUser);
+      setIsLoggedIn(true);
+      document.body.classList.add("is-logged-in");
+    }
+
+    setIsInitializing(false);
+  }, [initialUser]);
+
+  useEffect(() => {
+    const handleSessionExpired = () => {
+      chatSocket.disconnect();
+      setUser(null);
+      setIsLoggedIn(false);
+      setIsInitializing(false);
+      document.body.classList.remove("is-logged-in");
+    };
+
+    window.addEventListener(SESSION_EXPIRED_EVENT, handleSessionExpired);
     return () => {
-      cancelled = true;
+      window.removeEventListener(SESSION_EXPIRED_EVENT, handleSessionExpired);
     };
   }, []);
 
@@ -112,15 +126,19 @@ export function UiSessionProvider({
     setAuthModalMode(null);
   }, []);
 
-  const setUserFromAuth = useCallback((nextUser: GliceUser) => {
-    setUser(nextUser);
-    setIsLoggedIn(true);
-    closeAuth();
-  }, [closeAuth]);
+  const setUserFromAuth = useCallback(
+    (nextUser: GliceUser) => {
+      setUser(nextUser);
+      setIsLoggedIn(true);
+      document.body.classList.add("is-logged-in");
+      closeAuth();
+    },
+    [closeAuth],
+  );
 
   const logout = useCallback(() => {
-    chatSocket.logout();
-    tokenStorage.clear();
+    chatSocket.disconnect();
+    clearAuthSession();
     setUser(null);
     setIsLoggedIn(false);
     document.body.classList.remove("is-logged-in");

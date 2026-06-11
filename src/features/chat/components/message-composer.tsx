@@ -5,7 +5,13 @@ import { useUiSession } from "@/components/site/ui-session-provider";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { uploadChatMedia } from "../api/attachment-upload";
 import { useVoiceRecorder } from "../hooks/use-voice-recorder";
-import { captureVideoThumbnail } from "../lib/video-thumbnail";
+import { ensureVideoThumbnailDataUrl } from "../lib/video-thumbnail";
+import {
+  getVideoDuration,
+  isVideoFileUrl,
+  MAX_VIDEO_DURATION_SEC,
+  MAX_VIDEO_UPLOAD_BYTES,
+} from "../lib/video-media";
 import { chatSocket } from "../services/socket-service";
 import { useMessageStore } from "../stores/message-store";
 import { useRoomStore } from "../stores/room-store";
@@ -96,11 +102,30 @@ export function MessageComposer({ room }: MessageComposerProps) {
 
       let videoThumb = "";
       if (type === "video") {
-        try {
-          videoThumb = await captureVideoThumbnail(file);
-        } catch {
-          videoThumb = "";
+        if (file.size > MAX_VIDEO_UPLOAD_BYTES) {
+          revokeBlob(localPreview);
+          setUploadError(
+            "Video is too large. Please use a clip under 30 seconds or compress it first.",
+          );
+          return;
         }
+
+        try {
+          const duration = await getVideoDuration(file);
+          if (duration > MAX_VIDEO_DURATION_SEC + 2) {
+            revokeBlob(localPreview);
+            setUploadError(
+              `Video must be ${MAX_VIDEO_DURATION_SEC} seconds or less.`,
+            );
+            return;
+          }
+        } catch {
+          revokeBlob(localPreview);
+          setUploadError("Could not read this video file.");
+          return;
+        }
+
+        videoThumb = await ensureVideoThumbnailDataUrl(file);
       }
 
       const optimisticAttachment: ChatAttachment = {
@@ -109,7 +134,7 @@ export function MessageComposer({ room }: MessageComposerProps) {
         thumbnail:
           type === "image" || type === "audio"
             ? localPreview
-            : videoThumb || localPreview,
+            : videoThumb,
         localPreview,
         type,
         size: file.size,
@@ -162,7 +187,12 @@ export function MessageComposer({ room }: MessageComposerProps) {
         }
 
         const remoteUrl = uploaded.url;
-        const remoteThumb = uploaded.thumbnail || remoteUrl;
+        const remoteThumb =
+          type === "video"
+            ? uploaded.thumbnail && !isVideoFileUrl(uploaded.thumbnail)
+              ? uploaded.thumbnail
+              : ""
+            : uploaded.thumbnail || remoteUrl;
 
         const finalAttachment: ChatAttachment = {
           id: "",

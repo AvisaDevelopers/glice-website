@@ -269,7 +269,7 @@ body.chat-route {
   transition-delay: 0.06s;
 }
 
-.chat-app--island-active .chat-topbar-title {
+.chat-app--island-active .chat-topbar-messages-link {
   opacity: 0;
   transform: scale(0.94);
   transition:
@@ -306,7 +306,9 @@ body.chat-route {
 
 .chat-conversation-scroll {
   scroll-behavior: auto;
-  padding-bottom: 1.25rem;
+  width: 100%;
+  padding: 1rem 1.25rem 1.25rem;
+  box-sizing: border-box;
 }
 
 .chat-typing-row {
@@ -469,6 +471,11 @@ body.chat-route {
   width: 100%;
   object-fit: cover;
   border-radius: 0.75rem;
+}
+
+.chat-media-video {
+  background: #000;
+  pointer-events: none;
 }
 
 .chat-media-placeholder {
@@ -903,6 +910,38 @@ body.chat-route {
   background: var(--bg);
 }
 
+.chat-topbar-nav {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 0.375rem;
+  min-width: 0;
+}
+
+.chat-topbar-messages-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+  padding: 0.25rem 0.375rem;
+  border-radius: 0.5rem;
+  color: var(--text, #f5f5f5);
+  text-decoration: none;
+  transition: color 0.15s, background 0.15s;
+}
+
+.chat-topbar-messages-link:hover {
+  background: var(--surface);
+  color: var(--primary, #32e6a1);
+}
+
+.chat-topbar-messages-link h1 {
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+}
+
 .chat-topbar-title {
   display: flex;
   flex: 1;
@@ -916,6 +955,13 @@ body.chat-route {
   font-size: 1rem;
   font-weight: 600;
   letter-spacing: -0.02em;
+}
+
+.chat-topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
 }
 
 .chat-topbar-mark {
