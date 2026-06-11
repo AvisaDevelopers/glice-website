@@ -48,7 +48,12 @@ export function ChatListItem({
         active && "chat-list-item--active",
       )}
     >
-      <UserAvatar name={name} url={avatarUrl} isOnline={isOnline} />
+      <UserAvatar
+        name={name}
+        url={avatarUrl}
+        isOnline={isOnline}
+        showStatus
+      />
       <div className="min-w-0 flex-1">
         <div className="flex items-baseline justify-between gap-2">
           <span className="truncate text-sm font-semibold text-[var(--text)]">

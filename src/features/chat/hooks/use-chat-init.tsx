@@ -1,25 +1,40 @@
 "use client";
 
+import { hydrateSessionUser } from "@/features/auth/lib/hydrate-session-user";
 import { useUiSession } from "@/components/site/ui-session-provider";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { chatSocket } from "../services/socket-service";
 
 export function ChatSocketInitializer(): null {
-  const { isLoggedIn, isInitializing, user } = useUiSession();
+  const { isLoggedIn, isInitializing, user, applySessionUser } = useUiSession();
+  const connectGen = useRef(0);
 
   useEffect(() => {
     if (isInitializing) return;
 
-    if (isLoggedIn && user) {
-      chatSocket.connect({ user });
-    } else {
+    if (!isLoggedIn || !user) {
       chatSocket.disconnect();
+      return;
     }
 
+    const generation = ++connectGen.current;
+    let cancelled = false;
+
+    void (async () => {
+      const hydrated = await hydrateSessionUser(user);
+      if (cancelled || generation !== connectGen.current) return;
+
+      if (hydrated._id && hydrated._id !== user._id) {
+        applySessionUser(hydrated);
+      }
+
+      chatSocket.connect({ user: hydrated });
+    })();
+
     return () => {
-      // Keep socket alive across route changes; disconnect only on logout above.
+      cancelled = true;
     };
-  }, [isLoggedIn, isInitializing, user?._id, user?.email]);
+  }, [isLoggedIn, isInitializing, user?._id, user?.email, applySessionUser]);
 
   return null;
 }

@@ -17,17 +17,19 @@ export function ContactPageContent() {
   return (
     <>
       <section className="hero px-6 pt-36 pb-12 text-center">
-        <div className="reveal relative z-10 mx-auto max-w-3xl">
+        <div className="page-container">
+          <div className="reveal relative z-10 mx-auto max-w-3xl">
           <h1 className="display-1 balance mt-5 mb-6">Get in touch.</h1>
           <p className="lede balance mx-auto max-w-xl">
             Questions, feedback, or partnership ideas? Reach out and we&apos;ll get
             back to you as soon as possible.
           </p>
+          </div>
         </div>
       </section>
 
       <section className="section pt-8">
-        <div className="mx-auto max-w-6xl">
+        <div className="page-container">
           <div className="grid gap-10 lg:grid-cols-[1fr_1.4fr]">
             <div className="reveal space-y-4">
               <a href="mailto:support@glicelabs.com" className="contact-card">

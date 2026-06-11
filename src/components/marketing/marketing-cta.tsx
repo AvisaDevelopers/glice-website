@@ -8,7 +8,7 @@ type MarketingCtaProps = {
 export function MarketingCta({ title, description }: MarketingCtaProps) {
   return (
     <section className="section">
-      <div className="relative mx-auto max-w-4xl">
+      <div className="page-container relative">
         <div className="panel reveal relative overflow-hidden p-12 text-center md:p-16">
           <h2 className="display-2 balance mt-5 mb-5">{title}</h2>
           <p className="lede balance mx-auto mb-10 max-w-xl">{description}</p>

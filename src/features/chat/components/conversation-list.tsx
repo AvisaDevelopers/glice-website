@@ -115,12 +115,25 @@ export function ConversationList({
 
       {loading ? (
         <div className="chat-sidebar-skeleton">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="chat-sidebar-skeleton-row">
-              <div className="chat-sidebar-skeleton-avatar" />
+          {Array.from({ length: 7 }).map((_, i) => (
+            <div
+              key={i}
+              className="chat-sidebar-skeleton-row"
+              style={{ animationDelay: `${i * 70}ms` }}
+            >
+              <div
+                className="chat-sidebar-skeleton-avatar chat-shimmer"
+                style={{ animationDelay: `${i * 70}ms` }}
+              />
               <div className="chat-sidebar-skeleton-lines">
-                <div className="chat-sidebar-skeleton-line chat-sidebar-skeleton-line--wide" />
-                <div className="chat-sidebar-skeleton-line" />
+                <div
+                  className="chat-sidebar-skeleton-line chat-sidebar-skeleton-line--wide chat-shimmer"
+                  style={{ animationDelay: `${i * 70 + 40}ms` }}
+                />
+                <div
+                  className="chat-sidebar-skeleton-line chat-shimmer"
+                  style={{ animationDelay: `${i * 70 + 80}ms` }}
+                />
               </div>
             </div>
           ))}

@@ -8,6 +8,8 @@ type UserAvatarProps = {
   url?: string;
   size?: "sm" | "md" | "lg";
   isOnline?: boolean;
+  /** When true, shows green (online) or red (offline) status dot. */
+  showStatus?: boolean;
 };
 
 const sizes = {
@@ -21,6 +23,7 @@ export function UserAvatar({
   url,
   size = "md",
   isOnline = false,
+  showStatus = false,
 }: UserAvatarProps) {
   const initial = name.charAt(0).toUpperCase() || "G";
   const resolved = resolveMediaUrl(url);
@@ -44,8 +47,19 @@ export function UserAvatar({
           initial
         )}
       </div>
-      {isOnline && (
-        <span className="chat-avatar-online" aria-label="Online" />
+      {showStatus && (
+        <span
+          className={cn(
+            "chat-avatar-status",
+            isOnline
+              ? "chat-avatar-status--online"
+              : "chat-avatar-status--offline",
+          )}
+          aria-label={isOnline ? "Online" : "Offline"}
+        />
+      )}
+      {!showStatus && isOnline && (
+        <span className="chat-avatar-status chat-avatar-status--online" aria-label="Online" />
       )}
     </div>
   );

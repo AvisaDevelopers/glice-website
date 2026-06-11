@@ -1,37 +1,48 @@
 "use client";
 
 import { LogoutConfirmModal } from "@/components/auth/logout-confirm-modal";
+import { HomeHeaderActions } from "@/components/layout/home-header-actions";
+import { MessagesBadgeButton } from "@/components/layout/messages-badge-button";
+import { TopbarUserSection } from "@/components/layout/topbar-user-section";
 import { useUiSession } from "@/components/site/ui-session-provider";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useState } from "react";
-
-
 
 export function Header() {
   const pathname = usePathname();
-    const { isLoggedIn, userName, userInitial, openAuth, logout } = useUiSession();
-
+  const { isLoggedIn, openAuth, logout } = useUiSession();
   const [logoutModalOpen, setLogoutModalOpen] = useState(false);
-  const showAuthActions = pathname === "/";
-  const router = useRouter();
-
-  const openMessages = () => {
-    if (isLoggedIn) {
-      router.push("/messages");
-      return;
-    }
-    openAuth("login");
-  };
+  const isHome = pathname === "/";
+  const isMessages = pathname.startsWith("/messages");
 
   const handleLogoutConfirm = () => {
     setLogoutModalOpen(false);
     logout();
   };
 
+  const loggedInActions = (messagesVariant: "topbar" | "icon") => (
+    <>
+      <MessagesBadgeButton
+        variant={messagesVariant === "icon" ? "icon" : "topbar"}
+      />
+      <TopbarUserSection />
+      <button
+        type="button"
+        className="topbar-btn"
+        onClick={() => setLogoutModalOpen(true)}
+      >
+        Log out
+      </button>
+    </>
+  );
+
   return (
     <>
-      <header className="topbar" aria-label="Site">
+      <header
+        className={`topbar${isHome && isLoggedIn ? " topbar--home-premium" : ""}`}
+        aria-label="Site"
+      >
         <Link href="/" className="nav-brand">
           <span className="nav-brand-mark" aria-hidden="true" />
           <span className="nav-name">
@@ -39,16 +50,9 @@ export function Header() {
           </span>
         </Link>
 
-        {showAuthActions && (
-          <div className="topbar-actions topbar-guest">
-            <button
-              type="button"
-              className="topbar-btn btn-messages"
-              onClick={openMessages}
-            >
-              <i className="ri-message-3-line" aria-hidden="true" />
-              <span>Message</span>
-            </button>
+        {isHome && !isLoggedIn && (
+          <div className="topbar-actions">
+            <MessagesBadgeButton />
             <button
               type="button"
               className="topbar-btn"
@@ -66,25 +70,11 @@ export function Header() {
           </div>
         )}
 
-        {showAuthActions && (
-          <div className="topbar-actions topbar-user">
-            <button
-              type="button"
-              className="topbar-btn btn-messages"
-              onClick={openMessages}
-            >
-              <i className="ri-message-3-line" aria-hidden="true" />
-              <span>Message</span>
-            </button>
-            <span className="topbar-avatar">{userInitial}</span>
-            <span className="topbar-user-name">{userName}</span>
-            <button
-              type="button"
-              className="topbar-btn"
-              onClick={() => setLogoutModalOpen(true)}
-            >
-              Log out
-            </button>
+        {isHome && isLoggedIn && <HomeHeaderActions />}
+
+        {!isHome && isLoggedIn && !isMessages && (
+          <div className="topbar-actions topbar-user--always">
+            {loggedInActions("icon")}
           </div>
         )}
       </header>

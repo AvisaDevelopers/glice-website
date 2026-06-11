@@ -6,6 +6,12 @@ import {
   isPersistableMediaAttachment,
   messageToPayload,
 } from "../lib/parsers";
+import {
+  buildMessagePreview,
+  notifyIncomingMessage,
+  resolveSenderName,
+} from "../lib/chat-notifications";
+import { parseTypingRoomId } from "../lib/parse-typing-event";
 import { useMessageStore } from "../stores/message-store";
 import { useRoomStore } from "../stores/room-store";
 import { useSocketStore } from "../stores/socket-store";
@@ -23,9 +29,11 @@ class ChatSocketService {
   private currentRoomId = "";
   private connectedEmail: string | null = null;
   private convosLoading = false;
-  private msgsLoading = false;
   private msgTimeout: ReturnType<typeof setTimeout> | null = null;
   private pendingFetchRoomId: string | null = null;
+  private pendingMessageFetch: string | null = null;
+  private messageFetchRetries = new Map<string, number>();
+  private visibilityBound = false;
 
   connect({ user, location }: ConnectParams): void {
     if (this.socket?.connected && this.user?._id === user._id) {
@@ -53,14 +61,64 @@ class ChatSocketService {
 
     this.socket = io(url, {
       auth: { auth: token },
-      transports: ["websocket"],
+      transports: ["websocket", "polling"],
       reconnection: true,
-      reconnectionAttempts: 10,
+      reconnectionAttempts: 15,
       reconnectionDelay: 1500,
-      forceNew: true,
+      reconnectionDelayMax: 8000,
+      timeout: 20000,
     });
 
     this.registerListeners();
+    this.bindVisibilityReconnect();
+  }
+
+  private bindVisibilityReconnect(): void {
+    if (this.visibilityBound || typeof document === "undefined") return;
+    this.visibilityBound = true;
+
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState !== "visible" || !this.user) return;
+      if (this.socket?.connected) return;
+
+      const token = tokenStorage.getAccessToken();
+      if (this.socket) {
+        this.socket.auth = { auth: token };
+        this.socket.connect();
+        return;
+      }
+
+      this.connect({ user: this.user, location: this.location });
+    });
+  }
+
+  private patchUserFromServer(data: unknown): void {
+    if (!this.user || !data || typeof data !== "object" || Array.isArray(data)) {
+      return;
+    }
+
+    const map = data as Record<string, unknown>;
+    const id = String(map._id ?? map.id ?? "").trim();
+    if (!id || this.user._id === id) return;
+
+    this.user = {
+      ...this.user,
+      _id: id,
+      name: String(map.name ?? this.user.name ?? ""),
+      username: String(map.username ?? this.user.username ?? ""),
+      profileUrl: String(map.profileUrl ?? this.user.profileUrl ?? ""),
+    };
+    tokenStorage.setUser(this.user);
+    this.flushPendingMessageFetch();
+  }
+
+  private flushPendingMessageFetch(): void {
+    if (!this.pendingMessageFetch || !this.user?._id?.trim()) return;
+    const roomId = this.pendingMessageFetch;
+    this.pendingMessageFetch = null;
+    if (useMessageStore.getState().getMessages(roomId).length === 0) {
+      this.fetchMessages(roomId);
+    }
   }
 
   logout(): void {
@@ -85,8 +143,9 @@ class ChatSocketService {
     }
     this.connectedEmail = null;
     this.convosLoading = false;
-    this.msgsLoading = false;
     this.pendingFetchRoomId = null;
+    this.pendingMessageFetch = null;
+    this.messageFetchRetries.clear();
   }
 
   private resetState(): void {
@@ -102,10 +161,20 @@ class ChatSocketService {
     if (!socket) return;
 
     socket.on("connect", () => {
+      const token = tokenStorage.getAccessToken();
+      if (token && socket) {
+        socket.auth = { auth: token };
+      }
       useSocketStore.getState().setPhase("connected");
       this.connectedEmail = null;
       if (this.user?.email) {
         this.emitConnectUser();
+      }
+      if (this.user?._id?.trim()) {
+        this.flushPendingMessageFetch();
+        if (this.currentRoomId) {
+          this.ensureMessagesLoaded(this.currentRoomId);
+        }
       }
     });
 
@@ -119,6 +188,12 @@ class ChatSocketService {
       if (this.user?.email) {
         this.emitConnectUser();
       }
+      if (this.user?._id?.trim()) {
+        this.flushPendingMessageFetch();
+        if (this.currentRoomId) {
+          this.ensureMessagesLoaded(this.currentRoomId);
+        }
+      }
     });
 
     socket.on("disconnect", () => {
@@ -130,9 +205,11 @@ class ChatSocketService {
       useSocketStore.getState().setError("Unable to reach chat server");
     });
 
-    socket.on("user_connected", () => {
+    socket.on("user_connected", (data) => {
+      this.patchUserFromServer(data);
       useSocketStore.getState().setPhase("syncing");
       this.fetchConversations();
+      this.flushPendingMessageFetch();
     });
 
     socket.on("all_convo", (data) => {
@@ -148,19 +225,31 @@ class ChatSocketService {
     });
 
     socket.on("all_messages", (data) => {
-      this.clearMsgTimeout();
-      this.msgsLoading = false;
+      const raw =
+        data && typeof data === "object" && !Array.isArray(data)
+          ? (data as Record<string, unknown>)
+          : {};
+      const roomId = String(
+        raw.roomId ?? this.pendingFetchRoomId ?? "",
+      );
+      this.finishMessageFetch(roomId, false);
       useMessageStore.getState().setMessages(data);
     });
 
     socket.on("all_messages:error", () => {
-      this.clearMsgTimeout();
-      this.msgsLoading = false;
       const roomId =
         this.pendingFetchRoomId ?? useMessageStore.getState().activeRoomId;
-      if (roomId) {
-        useMessageStore.getState().setLoadError(roomId, true);
+      if (!roomId) return;
+
+      const retries = this.messageFetchRetries.get(roomId) ?? 0;
+      if (retries < 2) {
+        this.messageFetchRetries.set(roomId, retries + 1);
+        this.finishMessageFetch(roomId, false);
+        window.setTimeout(() => this.fetchMessages(roomId), 700 * (retries + 1));
+        return;
       }
+
+      this.finishMessageFetch(roomId, true);
     });
 
     socket.on("recieve_message", (data: unknown) => {
@@ -188,6 +277,17 @@ class ChatSocketService {
         },
       });
 
+      notifyIncomingMessage({
+        roomId: message.roomId,
+        senderId: message.sender,
+        senderName: resolveSenderName(message.roomId, message.sender),
+        preview: buildMessagePreview(
+          message.text,
+          message.attachment?.type,
+        ),
+        currentUserId: this.user?._id,
+      });
+
       if (ack && this.currentRoomId === message.roomId) {
         ack("ACK");
       }
@@ -210,10 +310,7 @@ class ChatSocketService {
     });
 
     socket.on("user_typing", (data: unknown) => {
-      const roomId =
-        typeof data === "string"
-          ? data
-          : String((data as { roomId?: string })?.roomId ?? "");
+      const roomId = parseTypingRoomId(data);
       if (roomId) {
         useRoomStore.getState().addTyping(roomId);
       }
@@ -263,12 +360,42 @@ class ChatSocketService {
     });
   }
 
-  private clearMsgTimeout(): void {
+  private finishMessageFetch(roomId: string, failed: boolean): void {
     if (this.msgTimeout) {
       clearTimeout(this.msgTimeout);
       this.msgTimeout = null;
     }
-    this.pendingFetchRoomId = null;
+    if (roomId) {
+      useMessageStore.getState().setLoading(roomId, false);
+      if (failed) {
+        if (useMessageStore.getState().getMessages(roomId).length === 0) {
+          useMessageStore.getState().setLoadError(roomId, true);
+        }
+      } else {
+        useMessageStore.getState().setLoadError(roomId, false);
+        this.messageFetchRetries.delete(roomId);
+      }
+    }
+    if (!failed || !roomId) {
+      this.pendingFetchRoomId = null;
+    }
+  }
+
+  private scheduleMessageFetchTimeout(roomId: string): void {
+    if (this.msgTimeout) {
+      clearTimeout(this.msgTimeout);
+    }
+    this.msgTimeout = setTimeout(() => {
+      const retries = this.messageFetchRetries.get(roomId) ?? 0;
+      if (retries < 2) {
+        this.messageFetchRetries.set(roomId, retries + 1);
+        useMessageStore.getState().setLoading(roomId, false);
+        this.pendingFetchRoomId = null;
+        this.fetchMessages(roomId);
+        return;
+      }
+      this.finishMessageFetch(roomId, true);
+    }, 10_000);
   }
 
   private emitConnectUser(): void {
@@ -282,6 +409,7 @@ class ChatSocketService {
 
   fetchConversations(): void {
     if (!this.socket || !this.user || this.convosLoading) return;
+    if (!this.user._id?.trim()) return;
     this.convosLoading = true;
     useRoomStore.getState().setLoading(true);
     this.socket.emit("get_all_convo", {
@@ -315,7 +443,22 @@ class ChatSocketService {
     }
 
     const messages = useMessageStore.getState().getMessages(roomId);
-    if (messages.length === 0) {
+    if (messages.length === 0 && !useMessageStore.getState().isLoading(roomId)) {
+      this.fetchMessages(roomId);
+    }
+  }
+
+  /** Retry fetch when socket/user becomes ready after opening a thread. */
+  ensureMessagesLoaded(roomId: string): void {
+    if (!roomId) return;
+    const messages = useMessageStore.getState().getMessages(roomId);
+    const loading = useMessageStore.getState().isLoading(roomId);
+    const error = useMessageStore.getState().hasLoadError(roomId);
+    if (messages.length === 0 && !loading) {
+      this.fetchMessages(roomId);
+    } else if (error && messages.length === 0 && !loading) {
+      useMessageStore.getState().setLoadError(roomId, false);
+      this.messageFetchRetries.delete(roomId);
       this.fetchMessages(roomId);
     }
   }
@@ -325,8 +468,16 @@ class ChatSocketService {
   }
 
   fetchMessages(roomId: string, page = 0): void {
-    if (!this.socket || !this.user || this.msgsLoading) return;
-    this.msgsLoading = true;
+    if (!this.socket || !this.user) return;
+
+    const userId = this.user._id?.trim();
+    if (!this.socket.connected || !userId) {
+      this.pendingMessageFetch = roomId;
+      return;
+    }
+
+    if (useMessageStore.getState().isLoading(roomId)) return;
+
     this.pendingFetchRoomId = roomId;
     useMessageStore.getState().setLoading(roomId, true);
     useMessageStore.getState().setLoadError(roomId, false);
@@ -336,28 +487,15 @@ class ChatSocketService {
       page > 0
         ? {
             roomId,
-            currentPage: pagination.currentPage + 1,
+            currentPage: page,
             totalPages: pagination.totalPages,
             totalMessages: pagination.totalMessages,
             messages: [],
           }
-        : {
-            roomId,
-            currentPage: 0,
-            totalPages: 1,
-            totalMessages: 0,
-            messages: [],
-          };
+        : { roomId };
 
-    this.socket.emit("get_all", { ...payload, userId: this.user._id });
-
-    this.clearMsgTimeout();
-    this.msgTimeout = setTimeout(() => {
-      if (this.msgsLoading) {
-        this.msgsLoading = false;
-        useMessageStore.getState().setLoadError(roomId, true);
-      }
-    }, 6000);
+    this.socket.emit("get_all", { ...payload, userId });
+    this.scheduleMessageFetchTimeout(roomId);
   }
 
   markRead(roomId: string): void {

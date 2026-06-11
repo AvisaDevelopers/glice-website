@@ -12,52 +12,59 @@ import { ChatImage } from "./chat-image";
 type ChatVideoProps = {
   attachment: ChatAttachment;
   eager?: boolean;
+  onOpen?: (payload: { url: string; poster?: string }) => void;
 };
 
-export function ChatVideo({ attachment, eager = false }: ChatVideoProps) {
+export function ChatVideo({ attachment, eager = false, onOpen }: ChatVideoProps) {
   const playUrl = useMemo(() => pickVideoPlayUrl(attachment), [attachment]);
   const posterSrc = useMemo(() => pickVideoPosterSrc(attachment), [attachment]);
   const localBlob =
     attachment.localPreview?.startsWith("blob:") ? attachment.localPreview : "";
-  const previewSrc = localBlob || playUrl;
 
-  const content =
-    posterSrc && !localBlob ? (
-      <ChatImage
-        attachment={attachment}
-        src={posterSrc}
-        fallbackSrc={posterSrc}
-        eager={eager}
-        className="chat-media-img"
-      />
-    ) : previewSrc ? (
-      <video
-        src={previewSrc}
-        className="chat-media-img chat-media-video"
-        muted
-        playsInline
-        preload={eager ? "auto" : "metadata"}
-        poster={posterSrc || undefined}
-      />
-    ) : (
-      <span className="chat-media-placeholder" />
-    );
+  const openPayload = useMemo(() => {
+    const url = playUrl || localBlob;
+    if (!url) return null;
+    return { url, poster: posterSrc || undefined };
+  }, [playUrl, localBlob, posterSrc]);
 
-  if (!playUrl && !localBlob) {
+  if (!openPayload) {
     return <span className="chat-media-placeholder" />;
   }
 
+  const handleOpen = () => {
+    onOpen?.(openPayload);
+  };
+
   return (
-    <a
-      href={playUrl || localBlob}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="chat-media-btn relative block"
+    <button
+      type="button"
+      className="chat-media-btn relative block w-full"
+      onClick={handleOpen}
+      aria-label="Play video"
     >
-      {content}
-      <span className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/30">
+      {posterSrc ? (
+        <ChatImage
+          attachment={attachment}
+          src={posterSrc}
+          fallbackSrc={posterSrc}
+          eager={eager}
+          className="chat-media-img"
+        />
+      ) : localBlob ? (
+        <video
+          src={localBlob}
+          className="chat-media-img chat-media-video"
+          muted
+          playsInline
+          preload="metadata"
+          aria-hidden
+        />
+      ) : (
+        <span className="chat-media-placeholder chat-media-placeholder--video" />
+      )}
+      <span className="chat-video-play-overlay" aria-hidden>
         <Play className="h-10 w-10 fill-white text-white" />
       </span>
-    </a>
+    </button>
   );
 }

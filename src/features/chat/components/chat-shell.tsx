@@ -3,7 +3,7 @@
 import { useUiSession } from "@/components/site/ui-session-provider";
 import { MessageSquare } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useCallback } from "react";
+import { useCallback, useEffect } from "react";
 import { ChatThreadLayoutEffect } from "./chat-thread-layout-effect";
 import { ConversationList } from "./conversation-list";
 import { ConversationView } from "./conversation-view";
@@ -27,17 +27,39 @@ export function ChatShell() {
     router.push("/messages", { scroll: false });
   }, [router]);
 
+  useEffect(() => {
+    const onOpenRoom = (event: Event) => {
+      const roomId = (event as CustomEvent<{ roomId?: string }>).detail?.roomId;
+      if (roomId) selectRoom(roomId);
+    };
+    window.addEventListener("glice-open-chat-room", onOpenRoom);
+    return () => window.removeEventListener("glice-open-chat-room", onOpenRoom);
+  }, [selectRoom]);
+
   if (isInitializing) {
     return (
       <div className="chat-layout">
         <aside className="chat-sidebar">
-          <div className="animate-pulse space-y-3 p-4">
-            {Array.from({ length: 5 }).map((_, i) => (
-              <div key={i} className="flex gap-3">
-                <div className="h-11 w-11 rounded-full bg-[var(--surface-2)]" />
-                <div className="flex-1 space-y-2 pt-1">
-                  <div className="h-3 w-2/3 rounded bg-[var(--surface-2)]" />
-                  <div className="h-3 w-1/2 rounded bg-[var(--surface-2)]" />
+          <div className="chat-sidebar-skeleton p-2">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div
+                key={i}
+                className="chat-sidebar-skeleton-row"
+                style={{ animationDelay: `${i * 70}ms` }}
+              >
+                <div
+                  className="chat-sidebar-skeleton-avatar chat-shimmer"
+                  style={{ animationDelay: `${i * 70}ms` }}
+                />
+                <div className="chat-sidebar-skeleton-lines">
+                  <div
+                    className="chat-sidebar-skeleton-line chat-sidebar-skeleton-line--wide chat-shimmer"
+                    style={{ animationDelay: `${i * 70 + 40}ms` }}
+                  />
+                  <div
+                    className="chat-sidebar-skeleton-line chat-shimmer"
+                    style={{ animationDelay: `${i * 70 + 80}ms` }}
+                  />
                 </div>
               </div>
             ))}

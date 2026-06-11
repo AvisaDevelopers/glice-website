@@ -1,5 +1,5 @@
 import { ChatShell } from "@/features/chat/components/chat-shell";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Shimmer } from "@/components/ui/shimmer";
 import { Suspense } from "react";
 
 export const metadata = {
@@ -8,18 +8,37 @@ export const metadata = {
 
 function ChatFallback() {
   return (
-    <div className="flex min-h-0 flex-1 p-4">
-      <div className="w-full max-w-sm space-y-3 border-r border-border pr-4">
-        {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="flex items-center gap-3">
-            <Skeleton className="h-11 w-11 rounded-full" />
-            <div className="flex-1 space-y-2">
-              <Skeleton className="h-3 w-3/4" />
-              <Skeleton className="h-3 w-1/2" />
+    <div className="chat-layout">
+      <aside className="chat-sidebar">
+        <div className="chat-sidebar-skeleton p-2">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div
+              key={i}
+              className="chat-sidebar-skeleton-row"
+              style={{ animationDelay: `${i * 70}ms` }}
+            >
+              <Shimmer
+                className="chat-sidebar-skeleton-avatar"
+                rounded="full"
+                style={{ animationDelay: `${i * 70}ms` }}
+              />
+              <div className="chat-sidebar-skeleton-lines">
+                <Shimmer
+                  className="chat-sidebar-skeleton-line chat-sidebar-skeleton-line--wide"
+                  rounded="full"
+                  style={{ animationDelay: `${i * 70 + 40}ms` }}
+                />
+                <Shimmer
+                  className="chat-sidebar-skeleton-line"
+                  rounded="full"
+                  style={{ animationDelay: `${i * 70 + 80}ms` }}
+                />
+              </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      </aside>
+      <main className="chat-main hidden md:flex" />
     </div>
   );
 }

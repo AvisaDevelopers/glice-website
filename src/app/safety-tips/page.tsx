@@ -59,7 +59,7 @@ export default function SafetyTipsPage() {
   return (
     <>
       <section className="hero px-6 pt-36 pb-12">
-        <div className="reveal relative z-10 mx-auto max-w-4xl">
+        <div className="reveal relative z-10 page-container">
           <h1 className="display-1 balance mt-5 mb-5">Safety Tips.</h1>
           <p className="lede balance mb-6 max-w-2xl">
             Simple habits to keep your video and chat experience safer on Glice.
@@ -80,8 +80,8 @@ export default function SafetyTipsPage() {
         </div>
       </section>
 
-      <section className="section pt-8">
-        <div className="mx-auto max-w-6xl">
+      <section className="section pt-8 pb-16">
+        <div className="page-container">
           <div className="reveal grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {TIPS.map((tip) => (
               <div key={tip.title} className="panel tip">

@@ -4,9 +4,11 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ChatRouteEffect } from "@/components/site/chat-route-effect";
 import { SiteEffects } from "@/components/site/site-effects";
 import { UiSessionProvider } from "@/components/site/ui-session-provider";
+import { ChatNotificationHost } from "@/features/chat/components/chat-notification-host";
 import { ChatSocketInitializer } from "@/features/chat/hooks/use-chat-init";
 import type { GliceUser } from "@/features/auth/types";
 import { GoogleAuthProvider } from "@/providers/google-auth-provider";
+import { Suspense } from "react";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -29,6 +31,9 @@ export function Providers({
       <GoogleAuthProvider>
         <UiSessionProvider initialUser={initialUser}>
           <ChatSocketInitializer />
+          <Suspense fallback={null}>
+            <ChatNotificationHost />
+          </Suspense>
           <ChatRouteEffect />
           <SiteEffects />
           {children}

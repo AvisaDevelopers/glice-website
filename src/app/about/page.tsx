@@ -52,7 +52,7 @@ export default function AboutPage() {
       </section>
 
       <section className="section pt-0">
-        <div className="mx-auto max-w-6xl">
+        <div className="page-container">
           <div className="reveal mb-14 text-center">
             <h2 className="display-2 balance mt-4">What we stand for.</h2>
           </div>
@@ -102,7 +102,7 @@ export default function AboutPage() {
       </section>
 
       <section className="section pt-0">
-        <div className="mx-auto max-w-6xl">
+        <div className="page-container">
           <div className="stat-strip hairline-t hairline-b reveal">
             {[
               ["10K", "+", "Growing community"],
@@ -123,7 +123,7 @@ export default function AboutPage() {
       </section>
 
       <section className="section">
-        <div className="mx-auto max-w-4xl">
+        <div className="page-container">
           <div className="reveal mb-12">
             <h2 className="display-2 balance mt-4">
               Designed for genuine connection.

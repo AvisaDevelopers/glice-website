@@ -4,7 +4,8 @@ import { useCallback, useEffect, useRef } from "react";
 import { useMessageStore } from "../stores/message-store";
 import type { ChatMessage } from "../types";
 
-const NEAR_BOTTOM_THRESHOLD = 140;
+const NEAR_BOTTOM_THRESHOLD = 120;
+const PROGRAMMATIC_SCROLL_GUARD_MS = 200;
 
 type UseMessageScrollOptions = {
   roomId: string;
@@ -26,6 +27,10 @@ export function useMessageScroll({
   const prevScrollHeightRef = useRef(0);
   const scrollEventRef = useRef(useMessageStore.getState().scrollEvent);
   const stickToBottomRef = useRef(true);
+  const initialScrollDoneRef = useRef(false);
+  const resizeHeightRef = useRef(0);
+  const scrollRafRef = useRef<number | null>(null);
+  const lastProgrammaticScrollRef = useRef(0);
 
   const messageCount = messages.length;
   const lastSender = messages[messageCount - 1]?.sender;
@@ -38,39 +43,21 @@ export function useMessageScroll({
     );
   }, []);
 
-  const jumpToBottom = useCallback(() => {
+  const scrollToEnd = useCallback((behavior: ScrollBehavior = "auto") => {
     const el = scrollRef.current;
     if (!el) return;
-    el.scrollTop = el.scrollHeight;
+
+    if (scrollRafRef.current !== null) {
+      cancelAnimationFrame(scrollRafRef.current);
+    }
+
+    scrollRafRef.current = requestAnimationFrame(() => {
+      scrollRafRef.current = null;
+      el.scrollTo({ top: el.scrollHeight, behavior });
+      resizeHeightRef.current = el.scrollHeight;
+      lastProgrammaticScrollRef.current = Date.now();
+    });
   }, []);
-
-  const scrollToBottom = useCallback((behavior: ScrollBehavior = "smooth") => {
-    const el = scrollRef.current;
-    if (!el) return;
-    el.scrollTo({ top: el.scrollHeight, behavior });
-  }, []);
-
-  const scheduleScrollToBottom = useCallback(
-    (instant = true) => {
-      const run = () => {
-        const el = scrollRef.current;
-        if (!el) return;
-        if (instant) {
-          el.scrollTop = el.scrollHeight;
-        } else {
-          el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
-        }
-      };
-
-      requestAnimationFrame(() => {
-        requestAnimationFrame(run);
-      });
-      window.setTimeout(run, 60);
-      window.setTimeout(run, 180);
-      window.setTimeout(run, 420);
-    },
-    [],
-  );
 
   useEffect(() => {
     const unsub = useMessageStore.subscribe((state) => {
@@ -85,8 +72,10 @@ export function useMessageScroll({
     stickToBottomRef.current = true;
     prevLengthRef.current = 0;
     prevScrollHeightRef.current = 0;
-    scheduleScrollToBottom(true);
-  }, [roomId, scheduleScrollToBottom]);
+    resizeHeightRef.current = 0;
+    initialScrollDoneRef.current = false;
+    lastProgrammaticScrollRef.current = 0;
+  }, [roomId]);
 
   useEffect(() => {
     const el = scrollRef.current;
@@ -105,18 +94,23 @@ export function useMessageScroll({
     if (!el) return;
 
     const ro = new ResizeObserver(() => {
-      if (stickToBottomRef.current || isNearBottom()) {
-        jumpToBottom();
+      if (!stickToBottomRef.current) return;
+      if (
+        Date.now() - lastProgrammaticScrollRef.current <
+        PROGRAMMATIC_SCROLL_GUARD_MS
+      ) {
+        return;
       }
+      const nextHeight = el.scrollHeight;
+      if (nextHeight <= resizeHeightRef.current + 1) return;
+      resizeHeightRef.current = nextHeight;
+      scrollToEnd("auto");
     });
 
+    resizeHeightRef.current = el.scrollHeight;
     ro.observe(el);
-    for (const child of Array.from(el.children)) {
-      ro.observe(child);
-    }
-
     return () => ro.disconnect();
-  }, [roomId, messageCount, typing, jumpToBottom, isNearBottom]);
+  }, [roomId, scrollToEnd]);
 
   useEffect(() => {
     const el = scrollRef.current;
@@ -131,16 +125,30 @@ export function useMessageScroll({
     if (prepended && prevScrollHeightRef.current > 0) {
       const delta = el.scrollHeight - prevScrollHeightRef.current;
       el.scrollTop += delta;
+      resizeHeightRef.current = el.scrollHeight;
     } else if (grew) {
       const ownMessage = lastSender === userId;
-      if (scrollEvent === "jump" || (prevLen === 0 && newLen > 0)) {
-        stickToBottomRef.current = true;
-        scheduleScrollToBottom(true);
-      } else if (
-        scrollEvent === "animate" &&
-        (stickToBottomRef.current || isNearBottom() || ownMessage)
+      const nearBottom = isNearBottom();
+
+      if (
+        scrollEvent === "jump" &&
+        (!initialScrollDoneRef.current || stickToBottomRef.current)
       ) {
-        scheduleScrollToBottom(false);
+        stickToBottomRef.current = true;
+        scrollToEnd("auto");
+        initialScrollDoneRef.current = true;
+      } else if (scrollEvent === "animate" && (nearBottom || ownMessage)) {
+        stickToBottomRef.current = true;
+        scrollToEnd("auto");
+      } else if (
+        prevLen === 0 &&
+        newLen > 0 &&
+        !initialScrollDoneRef.current &&
+        scrollEvent !== "jump"
+      ) {
+        stickToBottomRef.current = true;
+        scrollToEnd("auto");
+        initialScrollDoneRef.current = true;
       }
     }
 
@@ -150,33 +158,35 @@ export function useMessageScroll({
     if (scrollEvent !== "none") {
       useMessageStore.getState().clearScrollEvent();
     }
-  }, [
-    messageCount,
-    lastSender,
-    userId,
-    isNearBottom,
-    scheduleScrollToBottom,
-  ]);
+  }, [messageCount, lastSender, userId, isNearBottom, scrollToEnd]);
 
   useEffect(() => {
-    if (!typing) return;
+    if (!typing || isLoading) return;
     if (stickToBottomRef.current || isNearBottom()) {
-      scheduleScrollToBottom(false);
+      scrollToEnd("auto");
     }
-  }, [typing, isNearBottom, scheduleScrollToBottom]);
+  }, [typing, isLoading, isNearBottom, scrollToEnd]);
 
   useEffect(() => {
-    if (isLoading) return;
-    if (messageCount === 0) return;
-    if (stickToBottomRef.current) {
-      scheduleScrollToBottom(true);
-    }
-  }, [isLoading, messageCount, scheduleScrollToBottom]);
+    return () => {
+      if (scrollRafRef.current !== null) {
+        cancelAnimationFrame(scrollRafRef.current);
+      }
+    };
+  }, []);
 
   const beforeLoadMore = useCallback(() => {
     const el = scrollRef.current;
-    if (el) prevScrollHeightRef.current = el.scrollHeight;
+    if (el) {
+      prevScrollHeightRef.current = el.scrollHeight;
+      stickToBottomRef.current = false;
+    }
   }, []);
 
-  return { scrollRef, isNearBottom, scrollToBottom, beforeLoadMore };
+  return {
+    scrollRef,
+    isNearBottom,
+    scrollToBottom: scrollToEnd,
+    beforeLoadMore,
+  };
 }

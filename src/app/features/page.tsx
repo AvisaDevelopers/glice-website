@@ -114,7 +114,7 @@ export default function FeaturesPage() {
       />
 
       <section className="section pt-12">
-        <div className="mx-auto max-w-6xl space-y-32">
+        <div className="page-container space-y-32">
           {FEATURES.map((feature) => (
             <FeatureRow key={feature.title} {...feature} />
           ))}
@@ -122,7 +122,7 @@ export default function FeaturesPage() {
       </section>
 
       <section className="section">
-        <div className="mx-auto max-w-6xl">
+        <div className="page-container">
           <div className="reveal mb-16 text-center">
             <h2 className="display-2 balance mt-4">How connections happen.</h2>
           </div>

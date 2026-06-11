@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { dedupeMessages } from "../lib/dedupe-messages";
 import { parseMessage, parsePaginatedMessages } from "../lib/parsers";
 import type { ChatAttachment, ChatMessage, ScrollEvent } from "../types";
 
@@ -116,12 +117,19 @@ export const useMessageStore = create<MessageStore>((set, get) => ({
     const existing = get().cache[roomId] ?? [];
 
     const isPrepend = existing.length > 0 && parsed.currentPage !== 1;
-    const merged = isPrepend ? [...reversed, ...existing] : reversed;
-    const scrollEvent: ScrollEvent = isPrepend
-      ? "none"
-      : merged.length > 0
-        ? "jump"
-        : "none";
+    const existingIds = new Set(existing.map((m) => m.id).filter(Boolean));
+    const incoming = isPrepend
+      ? reversed.filter((m) => !m.id || !existingIds.has(m.id))
+      : reversed;
+    const merged = dedupeMessages(
+      isPrepend ? [...incoming, ...existing] : incoming,
+    );
+    const scrollEvent: ScrollEvent =
+      isPrepend || existing.length > 0
+        ? "none"
+        : merged.length > 0
+          ? "jump"
+          : "none";
 
     set({
       cache: { ...get().cache, [roomId]: merged },
@@ -218,6 +226,16 @@ export const useMessageStore = create<MessageStore>((set, get) => ({
       return merged;
     }
 
+    if (message.id) {
+      const duplicateIdx = list.findIndex((m) => m.id === message.id);
+      if (duplicateIdx !== -1) {
+        list[duplicateIdx] = { ...list[duplicateIdx], ...message };
+        set({ cache: { ...get().cache, [roomId]: list } });
+        emit(set, roomId, "none");
+        return list[duplicateIdx];
+      }
+    }
+
     if (update) {
       const idx = list.findIndex((m) => m.id === message.id);
       if (idx !== -1) list.splice(idx, 1);
@@ -236,8 +254,18 @@ export const useMessageStore = create<MessageStore>((set, get) => ({
     const list = [...(get().cache[roomId] ?? [])];
     const idx = list.findIndex((m) => m.id === oldId);
     if (idx === -1) return;
-    list[idx] = { ...list[idx], id: newId };
-    set({ cache: { ...get().cache, [roomId]: list } });
+
+    const duplicateIdx = newId
+      ? list.findIndex((m) => m.id === newId && m.id !== oldId)
+      : -1;
+
+    if (duplicateIdx !== -1) {
+      list.splice(idx, 1);
+    } else {
+      list[idx] = { ...list[idx], id: newId };
+    }
+
+    set({ cache: { ...get().cache, [roomId]: dedupeMessages(list) } });
     emit(set, roomId, "none");
   },
 

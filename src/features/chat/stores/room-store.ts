@@ -63,27 +63,29 @@ export const useRoomStore = create<RoomStore>((set, get) => ({
   getRoom: (roomId) => get().rooms.find((r) => r.roomId === roomId),
 
   addTyping: (roomId) => {
-    const { rooms, typingTimers } = get();
-    const idx = rooms.findIndex((r) => r.roomId === roomId);
-    if (idx === -1) return;
+    set((state) => {
+      const idx = state.rooms.findIndex((r) => r.roomId === roomId);
+      if (idx === -1) return state;
 
-    const next = [...rooms];
-    next[idx] = { ...next[idx], typing: true };
-    set({ rooms: next });
+      const nextRooms = [...state.rooms];
+      nextRooms[idx] = { ...nextRooms[idx], typing: true };
 
-    if (typingTimers[roomId]) clearTimeout(typingTimers[roomId]);
-    const timer = setTimeout(() => {
-      const state = get();
-      const i = state.rooms.findIndex((r) => r.roomId === roomId);
-      if (i === -1) return;
-      const updated = [...state.rooms];
-      updated[i] = { ...updated[i], typing: false };
-      const timers = { ...state.typingTimers };
-      delete timers[roomId];
-      set({ rooms: updated, typingTimers: timers });
-    }, 5000);
+      const nextTimers = { ...state.typingTimers };
+      if (nextTimers[roomId]) clearTimeout(nextTimers[roomId]);
 
-    set({ typingTimers: { ...typingTimers, [roomId]: timer } });
+      nextTimers[roomId] = setTimeout(() => {
+        const latest = get();
+        const i = latest.rooms.findIndex((r) => r.roomId === roomId);
+        if (i === -1) return;
+        const updated = [...latest.rooms];
+        updated[i] = { ...updated[i], typing: false };
+        const timers = { ...latest.typingTimers };
+        delete timers[roomId];
+        set({ rooms: updated, typingTimers: timers });
+      }, 5000);
+
+      return { rooms: nextRooms, typingTimers: nextTimers };
+    });
   },
 
   updateRoom: ({

@@ -1,13 +1,18 @@
 "use client";
 
-import type { MouseEvent } from "react";
 import {
   ChatBubble,
   ChatMessage,
   ChatMessageMeta,
 } from "@/components/chat/message";
-import { Check, CheckCheck } from "lucide-react";
-import { formatMessageTime } from "../lib/format";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Check, CheckCheck, MoreHorizontal, Undo2 } from "lucide-react";
+import { RelativeTime } from "@/components/chat/relative-time";
 import { attachmentCaptionText } from "../lib/attachment-text";
 import {
   pickAttachmentImageSrc,
@@ -26,6 +31,7 @@ type MessageBubbleProps = {
   loading?: boolean;
   onUnsend?: () => void;
   onImageClick?: (url: string) => void;
+  onVideoClick?: (payload: { url: string; poster?: string }) => void;
 };
 
 export function MessageBubble({
@@ -35,6 +41,7 @@ export function MessageBubble({
   loading = false,
   onUnsend,
   onImageClick,
+  onVideoClick,
 }: MessageBubbleProps) {
   const isDeleted = message.status === "deleted";
   const attachment = message.attachment;
@@ -56,6 +63,7 @@ export function MessageBubble({
     : (message.text ?? "").trim();
   const hasCaption = Boolean(captionText) && !isDeleted;
   const from = isSentByMe ? "user" : "assistant";
+  const canUnsend = Boolean(onUnsend) && !isDeleted && !isUploading;
 
   const displayText = (message.text ?? "").trim();
   const deletedText = isSentByMe
@@ -76,20 +84,12 @@ export function MessageBubble({
 
   const meta = (
     <ChatMessageMeta sent={isSentByMe}>
-      <time dateTime={message.timestamp.toISOString()}>
-        {formatMessageTime(message.timestamp)}
-      </time>
+      <RelativeTime date={message.timestamp} />
       {ticks}
     </ChatMessageMeta>
   );
 
-  const handleContextMenu = (e: MouseEvent) => {
-    if (!onUnsend) return;
-    e.preventDefault();
-    if (window.confirm("Unsend this message?")) onUnsend();
-  };
-
-  const content = (
+  const bubbleContent = (
     <>
       {hasAttachment && attachment ? (
         <ChatBubble
@@ -112,6 +112,7 @@ export function MessageBubble({
               <ChatVideo
                 attachment={attachment}
                 eager={Boolean(attachment.localPreview)}
+                onOpen={onVideoClick}
               />
             )}
             {attachment.type === "audio" && (
@@ -147,12 +148,11 @@ export function MessageBubble({
         </ChatBubble>
       ) : (
         <ChatBubble from={from}>
-          <p className={isDeleted ? "italic opacity-70" : undefined}>
+          <p className={isDeleted ? "chat-bubble-deleted" : undefined}>
             {isDeleted ? deletedText : displayText}
           </p>
         </ChatBubble>
       )}
-      {meta}
     </>
   );
 
@@ -160,10 +160,37 @@ export function MessageBubble({
     <ChatMessage
       from={from}
       compact={isLastSame}
-      className={onUnsend ? "cursor-context-menu" : undefined}
-      onContextMenu={onUnsend ? handleContextMenu : undefined}
+      className="chat-msg-row-wrap"
     >
-      {content}
+      <div className={`chat-msg-bubble-wrap${isSentByMe ? " chat-msg-bubble-wrap--sent" : ""}`}>
+        {canUnsend && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                className="chat-msg-action-btn"
+                aria-label="Message options"
+              >
+                <MoreHorizontal className="h-4 w-4" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              align={isSentByMe ? "end" : "start"}
+              className="chat-menu-panel chat-msg-menu"
+            >
+              <DropdownMenuItem
+                className="chat-menu-item chat-menu-item--danger"
+                onClick={onUnsend}
+              >
+                <Undo2 className="h-4 w-4" />
+                Unsend message
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
+        {bubbleContent}
+      </div>
+      {meta}
     </ChatMessage>
   );
 }
