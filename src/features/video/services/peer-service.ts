@@ -33,6 +33,7 @@ export class PeerService {
   private dialStartedAt = 0;
   private lastOutboundAt = 0;
   private unavailableStreak = 0;
+  private destroying = false;
 
   setLocalStream(stream: MediaStream | null) {
     this.localStream = stream;
@@ -182,6 +183,7 @@ export class PeerService {
       });
 
       this.peer.on("disconnected", () => {
+        if (this.destroying) return;
         console.warn("[Peer] Lost connection to server — reconnecting");
         this.peerOpen = false;
         try {
@@ -398,26 +400,39 @@ export class PeerService {
   /** Flutter diconnectPeer() — full teardown. */
   disconnect() {
     console.log("[Peer] Full teardown (disconnect)");
+    this.destroying = true;
     this.endCall();
     this.pendingRoomId = null;
     this.openPromise = null;
     this.peerOpen = false;
 
-    if (!this.peer) return;
-
-    try {
-      this.peer.disconnect();
-    } catch {
-      /* ignore */
-    }
-    try {
-      this.peer.destroy();
-    } catch {
-      /* ignore */
-    }
+    const peer = this.peer;
     this.peer = null;
     this.peerUserId = null;
     this.unavailableStreak = 0;
+
+    if (!peer) {
+      this.destroying = false;
+      return;
+    }
+
+    try {
+      peer.removeAllListeners();
+    } catch {
+      /* ignore */
+    }
+    try {
+      peer.disconnect();
+    } catch {
+      /* ignore */
+    }
+    try {
+      peer.destroy();
+    } catch {
+      /* ignore */
+    }
+
+    this.destroying = false;
   }
 
   /** Reset signaling for a new match (rematch / stale connecting). */

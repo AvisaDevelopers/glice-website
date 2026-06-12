@@ -1,5 +1,10 @@
 import type { GliceUser } from "@/features/auth/types";
+import { getArFilterPipeline } from "@/features/ar-filters/pipeline";
 import { chatSocket } from "@/features/chat/services/socket-service";
+import {
+  getRawMediaStream,
+  setPublishedMediaStream,
+} from "@/features/video/hooks/use-media-stream";
 import {
   canUseSparkDating,
   fetchIceServers,
@@ -11,6 +16,7 @@ import { ensureLocalStream } from "../lib/ensure-local-stream";
 import { resolveDiscoverLocation } from "../lib/discover-location";
 import { buildDiscoverFilter } from "../lib/filter-payload";
 import { parseTempMessagePayload } from "../lib/parse-temp-message";
+import { releaseMediaStream } from "../lib/release-media-stream";
 import {
   buildSparkJoinPayload,
   buildSparkLeavePayload,
@@ -61,6 +67,8 @@ class SparkVideoService {
   private lobbyListenerBound = false;
   private lobbyJoinPromise: Promise<void> | null = null;
   private matchGeneration = 0;
+  /** Suppress onRemoteDisconnected while we intentionally close the peer. */
+  private intentionalTeardown = false;
 
   private readonly onSocketPeerFound = (raw: unknown) => {
     const data = raw as PeerFoundPayload;
@@ -69,13 +77,11 @@ class SparkVideoService {
   };
 
   private readonly onSocketHangUp = (raw: unknown) => {
-    const roomId = String(raw ?? "");
+    const roomId = this.parseHangUpRoomId(raw);
     const store = useVideoCallStore.getState();
-    if (roomId !== store.roomId) return;
+    if (!roomId || !store.roomId || roomId !== store.roomId) return;
     if (store.stage !== "connected" && store.stage !== "connecting") return;
-    this.teardownPeer();
-    this.stopCallTimer();
-    this.handleSessionEnd(false, true);
+    this.handlePartnerLeft();
   };
 
   private readonly onSocketMatched = (raw: unknown) => {
@@ -264,8 +270,23 @@ class SparkVideoService {
     const store = useVideoCallStore.getState();
 
     this.clearConnectTimeout();
-    if (store.stage === "connecting") {
-      peerService.resetForNewMatch();
+    this.stopDiscoverRetry();
+
+    const activeCall =
+      store.stage === "connected" ||
+      store.stage === "connecting" ||
+      store.stage === "feedback";
+    let peerWasTornDown = false;
+    if (activeCall || peerService.hasPeer()) {
+      this.teardownPeer();
+      peerWasTornDown = true;
+    } else {
+      peerService.endCall();
+    }
+
+    if (peerWasTornDown) {
+      await new Promise((resolve) => window.setTimeout(resolve, 350));
+      if (generation !== this.searchGeneration) return;
     }
 
     const socketReady = await chatSocket.waitUntilConnected(12_000);
@@ -290,7 +311,6 @@ class SparkVideoService {
     }
 
     this.currentFilter = filter;
-    peerService.endCall();
     latest.resetCall();
     latest.clearMessages();
     latest.setError(null);
@@ -330,15 +350,19 @@ class SparkVideoService {
   }
 
   cancelSearch() {
-    this.searchGeneration += 1;
+    this.abortInFlightMatch();
     this.stopTimers();
-    this.clearConnectTimeout();
     const stage = useVideoCallStore.getState().stage;
-    if (stage === "connecting") {
+    if (
+      stage === "connecting" ||
+      stage === "connected" ||
+      peerService.hasPeer()
+    ) {
       this.teardownPeer();
     } else {
       peerService.endCall();
     }
+    this.intentionalTeardown = false;
     useVideoCallStore.getState().setStage("idle");
   }
 
@@ -362,12 +386,51 @@ class SparkVideoService {
     const store = useVideoCallStore.getState();
     store.setEndedByMe(endedByMe);
     store.setContinueAfterFeedback(continueAfterFeedback);
+    this.abortInFlightMatch();
     this.emitHangUp();
     this.teardownPeer();
-    this.stopCallTimer();
+    this.stopTimers();
     window.setTimeout(() => {
       this.handleSessionEnd(endedByMe, continueAfterFeedback);
     }, 400);
+  }
+
+  /** Partner skipped or hung up (socket hangUp or WebRTC drop). */
+  private handlePartnerLeft() {
+    this.abortInFlightMatch();
+    this.teardownPeer();
+    this.stopTimers();
+    this.handleSessionEnd(false, true);
+  }
+
+  private parseHangUpRoomId(raw: unknown): string | null {
+    if (typeof raw === "string") {
+      const trimmed = raw.trim();
+      return trimmed || null;
+    }
+    if (raw && typeof raw === "object" && "roomId" in raw) {
+      const id = (raw as { roomId?: unknown }).roomId;
+      return id != null ? String(id) : null;
+    }
+    return null;
+  }
+
+  /** Cancel stale peer_found / init work from the previous match. */
+  private abortInFlightMatch() {
+    this.searchGeneration += 1;
+    this.matchGeneration += 1;
+    this.clearConnectTimeout();
+    this.stopDiscoverRetry();
+  }
+
+  /** Reset AR canvas → raw camera for the next peer init. */
+  private releaseLocalPublishPath() {
+    getArFilterPipeline().stop();
+    const raw = getRawMediaStream();
+    if (raw) {
+      setPublishedMediaStream(raw);
+      peerService.setLocalStream(raw);
+    }
   }
 
   submitFeedback(liked: boolean | null) {
@@ -447,6 +510,7 @@ class SparkVideoService {
     const store = useVideoCallStore.getState();
     store.setFeedbackPhase("done");
     store.resetCall();
+    this.intentionalTeardown = false;
 
     if (continueAfterFeedback && this.currentFilter) {
       void this.startSearch(this.currentFilter);
@@ -460,6 +524,7 @@ class SparkVideoService {
     const store = useVideoCallStore.getState();
     const shouldFeedback = store.everConnected;
 
+    releaseMediaStream(store.remoteStream);
     store.clearMediaState();
     store.setEverConnected(false);
 
@@ -473,6 +538,7 @@ class SparkVideoService {
     }
 
     store.resetCall();
+    this.intentionalTeardown = false;
 
     if (continueAfterFeedback && this.currentFilter) {
       void this.startSearch(this.currentFilter);
@@ -590,8 +656,10 @@ class SparkVideoService {
 
   private onRemoteDisconnected() {
     const store = useVideoCallStore.getState();
-    if (store.stage !== "connected") return;
+    if (store.stage !== "connected" || this.intentionalTeardown) return;
+    releaseMediaStream(store.remoteStream);
     store.setRemoteStream(null);
+    this.handlePartnerLeft();
   }
 
   private handleIncomingTempMessage(raw: unknown) {
@@ -762,6 +830,7 @@ class SparkVideoService {
   private stopTimers() {
     this.stopSearchTimer();
     this.stopCallTimer();
+    this.stopDiscoverRetry();
     this.clearConnectTimeout();
   }
 
@@ -845,13 +914,17 @@ class SparkVideoService {
   /** Close active media connections (Flutter endCall). */
   private cleanupPeer() {
     this.clearConnectTimeout();
+    const store = useVideoCallStore.getState();
+    releaseMediaStream(store.remoteStream);
+    store.setRemoteStream(null);
     peerService.endCall();
-    useVideoCallStore.getState().setRemoteStream(null);
   }
 
   /** Full peer teardown (Flutter diconnectPeer). */
   private teardownPeer() {
+    this.intentionalTeardown = true;
     this.cleanupPeer();
+    this.releaseLocalPublishPath();
     peerService.disconnect();
   }
 }
