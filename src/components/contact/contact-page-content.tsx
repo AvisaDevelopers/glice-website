@@ -16,7 +16,7 @@ export function ContactPageContent() {
 
   return (
     <>
-      <section className="hero px-6 pt-36 pb-12 text-center">
+      <section className="hero hero--below-header px-6 pb-12 text-center">
         <div className="page-container">
           <div className="reveal relative z-10 mx-auto max-w-3xl">
           <h1 className="display-1 balance mt-5 mb-6">Get in touch.</h1>

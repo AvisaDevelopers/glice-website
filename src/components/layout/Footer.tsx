@@ -3,7 +3,7 @@ import Link from "next/link";
 
 export function Footer() {
   return (
-    <footer className="site-footer hairline-t px-6 pt-16 pb-10">
+    <footer className="site-footer hairline-t">
       <div className="mx-auto max-w-7xl">
         <div className="footer-grid mb-12">
           <div>

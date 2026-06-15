@@ -85,7 +85,7 @@ export default function ResetPasswordPage() {
   };
 
   return (
-    <section className="hero px-6 pt-36 pb-12">
+    <section className="hero hero--below-header px-6 pb-12">
       <div className="reveal relative z-10 mx-auto max-w-md">
         <h1 className="display-3 balance mt-5 mb-4 text-center">
           Reset your password

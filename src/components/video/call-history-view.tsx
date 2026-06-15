@@ -76,8 +76,12 @@ function CallHistoryCard({ entry }: { entry: RandomCallEntry }) {
         <div className="call-history-card-head">
           <div>
             <h3>{partner.name}</h3>
-            {partner.username && (
+            {partner.username ? (
               <p className="call-history-card-username">@{partner.username}</p>
+            ) : (
+              <p className="call-history-card-username" aria-hidden="true">
+                &nbsp;
+              </p>
             )}
           </div>
           <time dateTime={timestamp.toISOString()}>
@@ -85,35 +89,39 @@ function CallHistoryCard({ entry }: { entry: RandomCallEntry }) {
           </time>
         </div>
 
-        <div className="call-history-card-meta-row">
-          {partner.age ? (
-            <span>
-              <UserRound className="h-3.5 w-3.5" aria-hidden />
-              {partner.age}
-              {genderLabel(partner.gender)
-                ? ` · ${genderLabel(partner.gender)}`
-                : ""}
-            </span>
-          ) : null}
-          <span>
-            <Clock3 className="h-3.5 w-3.5" aria-hidden />
-            {durationLabel}
-          </span>
-        </div>
-
-        {partner.bio && (
-          <p className="call-history-card-bio">{partner.bio}</p>
-        )}
-
-        {partner.interests && partner.interests.length > 0 && (
-          <div className="call-history-card-tags">
-            {partner.interests.slice(0, 4).map((interest) => (
-              <span key={interest} className="call-history-card-tag">
-                {interest}
+        <div className="call-history-card-body">
+          <div className="call-history-card-meta-row">
+            {partner.age ? (
+              <span>
+                <UserRound className="h-3.5 w-3.5" aria-hidden />
+                {partner.age}
+                {genderLabel(partner.gender)
+                  ? ` · ${genderLabel(partner.gender)}`
+                  : ""}
               </span>
-            ))}
+            ) : null}
+            <span>
+              <Clock3 className="h-3.5 w-3.5" aria-hidden />
+              {durationLabel}
+            </span>
           </div>
-        )}
+
+          <p
+            className={`call-history-card-bio${partner.bio ? "" : " call-history-card-bio--empty"}`}
+          >
+            {partner.bio || "No bio"}
+          </p>
+
+          {partner.interests && partner.interests.length > 0 && (
+            <div className="call-history-card-tags">
+              {partner.interests.slice(0, 3).map((interest) => (
+                <span key={interest} className="call-history-card-tag">
+                  {interest}
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
 
         <div className="call-history-card-footer">
           {distance && (

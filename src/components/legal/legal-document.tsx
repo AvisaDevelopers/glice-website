@@ -29,7 +29,7 @@ export function LegalDocument({
 
   return (
     <>
-      <section className="hero px-6 pt-36 pb-12">
+      <section className="hero hero--below-header px-6 pb-12">
         <div className="page-container">
           <div className="doc-shell">
             <header className="doc-prose reveal relative z-10">

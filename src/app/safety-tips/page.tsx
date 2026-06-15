@@ -58,7 +58,7 @@ const TIPS = [
 export default function SafetyTipsPage() {
   return (
     <>
-      <section className="hero px-6 pt-36 pb-12">
+      <section className="hero hero--below-header px-6 pb-12">
         <div className="reveal relative z-10 page-container">
           <h1 className="display-1 balance mt-5 mb-5">Safety Tips.</h1>
           <p className="lede balance mb-6 max-w-2xl">
