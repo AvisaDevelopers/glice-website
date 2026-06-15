@@ -1,4 +1,3 @@
-import { ChatTopbar } from "@/features/chat/components/chat-topbar";
 import { ConnectionIsland } from "@/features/chat/components/connection-island";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import type { Viewport } from "next";
@@ -18,9 +17,8 @@ export default function ChatMessagesLayout({
 }) {
   return (
     <TooltipProvider delayDuration={300}>
-      <div className="chat-app">
+      <div className="chat-app chat-app--site-chrome">
         <ConnectionIsland />
-        <ChatTopbar />
         {children}
       </div>
     </TooltipProvider>

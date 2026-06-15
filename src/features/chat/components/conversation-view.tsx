@@ -162,11 +162,9 @@ export function ConversationView({ roomId, onBack }: ConversationViewProps) {
           <SecurityTips />
 
           {loadingOlder && (
-            <div className="chat-pagination-loader" role="status" aria-live="polite">
-              <span className="chat-pagination-loader-dot" />
-              <span className="chat-pagination-loader-dot" />
-              <span className="chat-pagination-loader-dot" />
-              <span className="text-xs text-[var(--muted)]">Loading older messages…</span>
+            <div className="chat-pagination-shimmer" role="status" aria-live="polite">
+              <span className="chat-shimmer chat-pagination-shimmer-bar" aria-hidden />
+              <span className="sr-only">Loading older messages…</span>
             </div>
           )}
 

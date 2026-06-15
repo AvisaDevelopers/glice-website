@@ -73,6 +73,15 @@ export function Header() {
 
         {isHome && isLoggedIn && <HomeHeaderActions />}
 
+        {isMessages && isLoggedIn && (
+          <div className="topbar-actions topbar-user--always">
+            <Link href="/" className="topbar-btn">
+              Live video
+            </Link>
+            {loggedInActions("topbar")}
+          </div>
+        )}
+
         {!isHome && isLoggedIn && !isMessages && (
           <div className="topbar-actions topbar-user--always">
             {isHistory && (

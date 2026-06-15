@@ -1,11 +1,14 @@
 "use client";
 
 import { ModeratedImage } from "@/components/media/moderated-image";
+import { resolveMediaUrl } from "@/features/chat/lib/resolve-media-url";
+import { DEFAULT_PROFILE_AVATAR } from "@/lib/default-avatar";
 import { cn } from "@/lib/utils";
 import type {
   MediaBlurVariant,
   MediaVerificationStatus,
 } from "@/lib/verification-status";
+import { useState } from "react";
 
 type ProfilePhotoProps = {
   name: string;
@@ -19,10 +22,6 @@ type ProfilePhotoProps = {
   compact?: boolean;
 };
 
-function profileInitial(name: string) {
-  return (name.trim()[0] ?? "?").toUpperCase();
-}
-
 export function ProfilePhoto({
   name,
   url,
@@ -34,17 +33,36 @@ export function ProfilePhoto({
   compact = false,
 }: ProfilePhotoProps) {
   const moderationStatus = profileStatus ?? verificationStatus;
-  if (!url?.trim()) {
+  const [broken, setBroken] = useState(false);
+  const mediaUrl = resolveMediaUrl(url);
+  const hasPhoto = Boolean(mediaUrl?.trim()) && !broken;
+  const displaySrc = hasPhoto ? mediaUrl! : DEFAULT_PROFILE_AVATAR;
+
+  if (!hasPhoto) {
+    const image = (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={displaySrc}
+        alt=""
+        className={cn("profile-photo-img", imgClassName)}
+      />
+    );
+
     return (
-      <span className={cn("profile-photo profile-photo--initial", className)}>
-        {profileInitial(name)}
+      <span className={cn("profile-photo", className)}>
+        {image}
       </span>
     );
   }
 
   const image = (
     // eslint-disable-next-line @next/next/no-img-element
-    <img src={url} alt="" className={cn("profile-photo-img", imgClassName)} />
+    <img
+      src={displaySrc}
+      alt=""
+      className={cn("profile-photo-img", imgClassName)}
+      onError={() => setBroken(true)}
+    />
   );
 
   return (

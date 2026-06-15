@@ -149,7 +149,7 @@ export function MessageBubble({
           )}
         </ChatBubble>
       ) : (
-        <ChatBubble from={from}>
+        <ChatBubble from={from} className="chat-bubble--text">
           <p className={isDeleted ? "chat-bubble-deleted" : undefined}>
             {isDeleted ? deletedText : displayText}
           </p>

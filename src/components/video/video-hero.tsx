@@ -98,7 +98,6 @@ export function VideoHero() {
     endedByMe,
     feedbackPhase,
     mutualMatch,
-    toggleLayout,
     startSearch,
     cancelSearch,
     endCall,
@@ -201,8 +200,10 @@ export function VideoHero() {
   const partnerMediaStatus =
     partner?.otherUserProfileStatus ?? partner?.profileStatus ?? "approved";
   const swapped = isLocalPrimary;
-  const showRemoteVideo = inCall && remoteStream && remoteVideoOn;
-  const showRemotePlaceholder = inCall && !showRemoteVideo;
+  const showRemoteVideo =
+    (inCall || isConnecting) && Boolean(remoteStream) && remoteVideoOn;
+  const showRemotePlaceholder = (inCall || isConnecting) && !showRemoteVideo;
+  const showConnectingOverlay = isConnecting && !remoteStream;
   const showRemoteCell = inCall || isConnecting;
   const showPartnerInBadge = Boolean(
     partner &&
@@ -416,8 +417,9 @@ export function VideoHero() {
                           {joinedLobbyMessage}
                         </span>
                       ) : isLoggedIn ? (
-                        <span className="hero-panel-idle-joined hero-panel-idle-joined--muted">
-                          Checking who&apos;s online…
+                        <span className="hero-panel-idle-joined hero-panel-idle-joined--muted hero-panel-idle-shimmer">
+                          <span className="chat-shimmer hero-panel-idle-shimmer-bar" aria-hidden />
+                          <span className="sr-only">Checking who&apos;s online…</span>
                         </span>
                       ) : null}
                       <span>
@@ -434,7 +436,7 @@ export function VideoHero() {
                   )}
 
                   <AnimatePresence>
-                    {isConnecting && (
+                    {showConnectingOverlay && (
                       <MatchConnectingOverlay
                         partnerName={partnerName}
                         profileUrl={partner?.profileUrl}
@@ -556,17 +558,6 @@ export function VideoHero() {
                     </div>
                   )}
 
-                  {inCall && (
-                    <button
-                      type="button"
-                      className="hero-pip-toggle"
-                      onClick={toggleLayout}
-                      aria-label="Swap video layout"
-                    >
-                      <i className="ri-picture-in-picture-2-line" aria-hidden />
-                    </button>
-                  )}
-
                 </div>
               </div>
 
@@ -644,14 +635,6 @@ export function VideoHero() {
                       }
                       aria-hidden
                     />
-                  </button>
-                  <button
-                    type="button"
-                    className="hero-toolbar-btn"
-                    onClick={toggleLayout}
-                    aria-label="Swap video layout"
-                  >
-                    <i className="ri-picture-in-picture-2-line" aria-hidden />
                   </button>
                   <button
                     type="button"

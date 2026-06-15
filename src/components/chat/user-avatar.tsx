@@ -2,12 +2,14 @@
 
 import { ModeratedImage } from "@/components/media/moderated-image";
 import { resolveMediaUrl } from "@/features/chat/lib/resolve-media-url";
+import { DEFAULT_PROFILE_AVATAR } from "@/lib/default-avatar";
 import { cn } from "@/lib/utils";
 import {
   isAccountVerified,
   type MediaVerificationStatus,
 } from "@/lib/verification-status";
 import { BadgeCheck } from "lucide-react";
+import { useState } from "react";
 
 type UserAvatarProps = {
   name: string;
@@ -47,17 +49,22 @@ export function UserAvatar({
   profileStatus,
   mediaVerificationStatus = "approved",
 }: UserAvatarProps) {
-  const initial = name.charAt(0).toUpperCase() || "G";
-  const resolved = resolveMediaUrl(url);
+  const [broken, setBroken] = useState(false);
+  const mediaUrl = resolveMediaUrl(url);
+  const hasPhoto = Boolean(mediaUrl) && !broken;
+  const displaySrc = hasPhoto ? mediaUrl : DEFAULT_PROFILE_AVATAR;
   const showVerified =
     verified ?? isAccountVerified(verification, undefined);
   const moderationStatus = profileStatus ?? mediaVerificationStatus;
 
-  const inner = resolved ? (
+  const image = (
     // eslint-disable-next-line @next/next/no-img-element
-    <img src={resolved} alt={name} className="h-full w-full object-cover" />
-  ) : (
-    <span className="font-semibold">{initial}</span>
+    <img
+      src={displaySrc}
+      alt={name}
+      className="h-full w-full object-cover"
+      onError={() => setBroken(true)}
+    />
   );
 
   return (
@@ -67,17 +74,17 @@ export function UserAvatar({
           "flex h-full w-full items-center justify-center overflow-hidden rounded-full bg-[var(--surface-2)] text-[var(--text)]",
         )}
       >
-        {resolved ? (
+        {hasPhoto ? (
           <ModeratedImage
             verificationStatus={moderationStatus}
             blurVariant="tile"
             compact
             className="moderated-image--avatar h-full w-full"
           >
-            {inner}
+            {image}
           </ModeratedImage>
         ) : (
-          inner
+          image
         )}
       </div>
 

@@ -8,15 +8,11 @@ export function SiteChrome({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const isChatRoute = pathname.startsWith("/messages");
 
-  if (isChatRoute) {
-    return <>{children}</>;
-  }
-
   return (
     <>
       <Header />
       {children}
-      <Footer />
+      {!isChatRoute && <Footer />}
     </>
   );
 }
