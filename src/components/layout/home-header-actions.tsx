@@ -8,7 +8,7 @@ export function HomeHeaderActions() {
   return (
     <div className="home-header-actions">
       <HistoryHeaderButton />
-      <MessagesBadgeButton variant="icon" showLabel={false} />
+      <MessagesBadgeButton />
       <HomeProfileMenu />
     </div>
   );

@@ -3,6 +3,7 @@
 import { GoogleSignInButton } from "@/components/auth/google-sign-in-button";
 import { OtpField } from "@/components/auth/otp-field";
 import { useUiSession } from "@/components/site/ui-session-provider";
+import { userNeedsOnboarding } from "@/features/onboarding/lib/needs-onboarding";
 import {
   loginWithEmail,
   loginWithGoogle,
@@ -12,12 +13,14 @@ import {
 } from "@/features/auth/api/auth-api";
 import { getErrorMessage } from "@/features/auth/lib/get-error-message";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 type AuthStep = "continue" | "email";
 type SignupPhase = "details" | "otp";
 
 export function AuthModal() {
+  const router = useRouter();
   const { authModalOpen, authModalMode, closeAuth, setUserFromAuth } =
     useUiSession();
   const [step, setStep] = useState<AuthStep>("continue");
@@ -30,6 +33,13 @@ export function AuthModal() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [otpSent, setOtpSent] = useState(false);
+
+  const routeAfterAuth = (user: Parameters<typeof setUserFromAuth>[0]) => {
+    setUserFromAuth(user);
+    if (userNeedsOnboarding(user)) {
+      router.push("/onboarding");
+    }
+  };
 
   useEffect(() => {
     if (authModalOpen) {
@@ -57,7 +67,7 @@ export function AuthModal() {
 
     try {
       const response = await loginWithEmail(email, password);
-      setUserFromAuth(response.user);
+      routeAfterAuth(response.user);
     } catch (err) {
       setError(getErrorMessage(err, "Login failed"));
     } finally {
@@ -114,7 +124,7 @@ export function AuthModal() {
         password: signupPassword,
         name: signupName,
       });
-      setUserFromAuth(response.user);
+      routeAfterAuth(response.user);
     } catch (err) {
       setError(getErrorMessage(err, "Sign up failed"));
     } finally {
@@ -132,12 +142,12 @@ export function AuthModal() {
 
     try {
       const response = await loginWithGoogle(credential, isRegister);
-      setUserFromAuth(response.user);
+      routeAfterAuth(response.user);
     } catch (err) {
       if (isRegister) {
         try {
           const response = await loginWithGoogle(credential, false);
-          setUserFromAuth(response.user);
+          routeAfterAuth(response.user);
           return;
         } catch {
           // Fall through to the sign-up error message.

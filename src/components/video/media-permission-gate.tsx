@@ -1,5 +1,6 @@
 "use client";
 
+import { MediaPermissionMotion } from "@/components/video/media-permission-motion";
 import type { MediaStatus } from "@/features/video/hooks/use-media-stream";
 
 type MediaPermissionGateProps = {
@@ -30,15 +31,7 @@ export function MediaPermissionGate({
     >
       <div className="media-permission-gate-layout">
         <div className="media-permission-gate-visual" aria-hidden>
-          <div className="media-permission-gate-visual-ring" />
-          <div className="media-permission-gate-visual-icons">
-            <div className="media-permission-gate-icon media-permission-gate-icon--cam">
-              <i className="ri-camera-line" />
-            </div>
-            <div className="media-permission-gate-icon media-permission-gate-icon--mic">
-              <i className="ri-mic-line" />
-            </div>
-          </div>
+          <MediaPermissionMotion />
         </div>
 
         <div className="media-permission-gate-content">

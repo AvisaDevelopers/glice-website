@@ -1,6 +1,7 @@
 "use client";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { OnboardingRedirect } from "@/components/onboarding/onboarding-redirect";
 import { PageTransition } from "@/components/layout/page-transition";
 import { ChatRouteEffect } from "@/components/site/chat-route-effect";
 import { VideoSessionGuard } from "@/components/video/video-session-guard";
@@ -40,6 +41,7 @@ export function Providers({
           <ServerAlertHost />
           <ChatRouteEffect />
           <VideoSessionGuard />
+          <OnboardingRedirect />
           <SiteEffects />
           <PageTransition>{children}</PageTransition>
         </UiSessionProvider>
