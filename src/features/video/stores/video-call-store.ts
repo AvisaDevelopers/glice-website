@@ -29,6 +29,7 @@ type VideoCallState = {
   matchedRoomId: string | null;
   everConnected: boolean;
   onlineCount: number;
+  lobbyGenderCounts: Record<string, number>;
   setStage: (stage: CallStage) => void;
   setPartner: (partner: VideoPartner | null) => void;
   setRoomId: (roomId: string | null) => void;
@@ -50,6 +51,7 @@ type VideoCallState = {
   setEverConnected: (everConnected: boolean) => void;
   clearMediaState: () => void;
   setOnlineCount: (count: number) => void;
+  setLobbyGenderCounts: (genderCounts: Record<string, number>) => void;
   resetCall: () => void;
 };
 
@@ -74,6 +76,7 @@ export const useVideoCallStore = create<VideoCallState>((set) => ({
   matchedRoomId: null,
   everConnected: false,
   onlineCount: 0,
+  lobbyGenderCounts: {},
   setStage: (stage) => set({ stage }),
   setPartner: (partner) => set({ partner }),
   setRoomId: (roomId) => set({ roomId }),
@@ -118,6 +121,7 @@ export const useVideoCallStore = create<VideoCallState>((set) => ({
       messages: [],
     }),
   setOnlineCount: (onlineCount) => set({ onlineCount }),
+  setLobbyGenderCounts: (lobbyGenderCounts) => set({ lobbyGenderCounts }),
   resetCall: () =>
     set({
       partner: null,

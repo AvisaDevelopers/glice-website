@@ -15,6 +15,8 @@ import {
 import { ensureLocalStream } from "../lib/ensure-local-stream";
 import { resolveDiscoverLocation } from "../lib/discover-location";
 import { buildDiscoverFilter } from "../lib/filter-payload";
+import { readProfileStatus } from "@/lib/verification-status";
+import { parsePeerFoundPayload, videoPartnerFromPeerFound } from "../lib/parse-peer-found";
 import { parseTempMessagePayload } from "../lib/parse-temp-message";
 import { releaseMediaStream } from "../lib/release-media-stream";
 import {
@@ -67,12 +69,21 @@ class SparkVideoService {
   private lobbyListenerBound = false;
   private lobbyJoinPromise: Promise<void> | null = null;
   private matchGeneration = 0;
+  private sessionEndGeneration = 0;
+  private pendingSessionEndTimer: ReturnType<typeof setTimeout> | null = null;
   /** Suppress onRemoteDisconnected while we intentionally close the peer. */
   private intentionalTeardown = false;
 
   private readonly onSocketPeerFound = (raw: unknown) => {
-    const data = raw as PeerFoundPayload;
-    if (!data?.roomId) return;
+    const data = parsePeerFoundPayload(raw);
+    if (!data) return;
+    if (process.env.NODE_ENV === "development") {
+      console.info("[Spark] peer_found", {
+        ...data,
+        otherUserProfileStatus: data.otherUserProfileStatus,
+        profileStatus: data.profileStatus,
+      });
+    }
     void this.onPeerFound(data);
   };
 
@@ -102,6 +113,15 @@ class SparkVideoService {
     if (store.stage !== "connected" || !store.roomId) return;
     if (data.email === this.user?.email) return;
     if (data.roomId !== store.roomId) return;
+
+    const partnerEmail = data.email?.trim();
+    if (partnerEmail && store.partner) {
+      const current = store.partner;
+      if (current.email !== partnerEmail) {
+        store.setPartner({ ...current, email: partnerEmail });
+      }
+    }
+
     store.setRemoteVideoOn(Boolean(data.isVideo));
   };
 
@@ -110,7 +130,9 @@ class SparkVideoService {
     if (process.env.NODE_ENV === "development") {
       console.info("[Spark] spark_count", parsed);
     }
-    useVideoCallStore.getState().setOnlineCount(parsed.count);
+    const store = useVideoCallStore.getState();
+    store.setOnlineCount(parsed.count);
+    store.setLobbyGenderCounts(parsed.genderCounts);
   };
 
   async prepare(user?: GliceUser | null): Promise<boolean> {
@@ -190,6 +212,7 @@ class SparkVideoService {
     this.unregisterLobbyListener();
     this.unregisterSocketListeners();
     this.stopTimers();
+    this.cancelPendingSessionEnd();
     this.teardownPeer();
     if (this.matchCelebrationTimer) {
       clearTimeout(this.matchCelebrationTimer);
@@ -210,6 +233,12 @@ class SparkVideoService {
   /** @deprecated Use ensureLobbyJoined via bind — kept for explicit refresh. */
   joinLobby() {
     void this.ensureLobbyJoined();
+  }
+
+  /** Re-request lobby headcount (Flutter `get_joined_count` on spark screen). */
+  refreshJoinedCount() {
+    if (!chatSocket.isConnected()) return;
+    chatSocket.emitEvent("get_joined_count", sparkJoinedCountRequest());
   }
 
   private async ensureLobbyJoined() {
@@ -272,12 +301,28 @@ class SparkVideoService {
     this.clearConnectTimeout();
     this.stopDiscoverRetry();
 
-    const activeCall =
+    const leavingSession =
       store.stage === "connected" ||
       store.stage === "connecting" ||
       store.stage === "feedback";
+    if (leavingSession) {
+      store.setStage("searching");
+      store.resetCall();
+      store.clearMessages();
+      store.setError(null);
+      store.setEndedByMe(true);
+    }
+
+    const failSearch = () => {
+      if (generation !== this.searchGeneration) return;
+      const latest = useVideoCallStore.getState();
+      if (latest.stage === "searching" || latest.stage === "feedback") {
+        latest.setStage("idle");
+      }
+    };
+
     let peerWasTornDown = false;
-    if (activeCall || peerService.hasPeer()) {
+    if (leavingSession || peerService.hasPeer()) {
       this.teardownPeer();
       peerWasTornDown = true;
     } else {
@@ -294,6 +339,7 @@ class SparkVideoService {
 
     if (!socketReady) {
       store.setError("Connecting to server… try again in a moment.");
+      failSearch();
       return;
     }
 
@@ -302,19 +348,20 @@ class SparkVideoService {
 
     const ok = await this.prepare(this.user);
     if (generation !== this.searchGeneration) return;
-    if (!ok) return;
+    if (!ok) {
+      failSearch();
+      return;
+    }
 
     const latest = useVideoCallStore.getState();
     if (latest.roundsLeft <= 0) {
       latest.setError("No rounds left for today.");
+      failSearch();
       return;
     }
 
     this.currentFilter = filter;
-    latest.resetCall();
-    latest.clearMessages();
     latest.setError(null);
-    latest.setEndedByMe(true);
 
     this.discoverLocation = await resolveDiscoverLocation(this.user);
     if (generation !== this.searchGeneration) return;
@@ -390,7 +437,13 @@ class SparkVideoService {
     this.emitHangUp();
     this.teardownPeer();
     this.stopTimers();
-    window.setTimeout(() => {
+    const generation = ++this.sessionEndGeneration;
+    if (this.pendingSessionEndTimer) {
+      clearTimeout(this.pendingSessionEndTimer);
+    }
+    this.pendingSessionEndTimer = setTimeout(() => {
+      this.pendingSessionEndTimer = null;
+      if (generation !== this.sessionEndGeneration) return;
       this.handleSessionEnd(endedByMe, continueAfterFeedback);
     }, 400);
   }
@@ -433,11 +486,24 @@ class SparkVideoService {
     }
   }
 
+  private cancelPendingSessionEnd() {
+    this.sessionEndGeneration += 1;
+    if (this.pendingSessionEndTimer) {
+      clearTimeout(this.pendingSessionEndTimer);
+      this.pendingSessionEndTimer = null;
+    }
+  }
+
   submitFeedback(liked: boolean | null) {
     const store = useVideoCallStore.getState();
     const { partner, roomId, continueAfterFeedback } = store;
 
-    if (!this.user || !partner || !roomId || liked === null) {
+    if (liked === null) {
+      this.afterFeedback(continueAfterFeedback);
+      return;
+    }
+
+    if (!this.user || !partner || !roomId) {
       this.afterFeedback(continueAfterFeedback);
       return;
     }
@@ -507,9 +573,14 @@ class SparkVideoService {
   }
 
   private afterFeedback(continueAfterFeedback: boolean) {
+    this.cancelPendingSessionEnd();
+
     const store = useVideoCallStore.getState();
     store.setFeedbackPhase("done");
-    store.resetCall();
+    store.setMutualMatch(false, null);
+    this.matchListenUntil = 0;
+    this.feedbackPartner = null;
+    this.feedbackRoomId = null;
     this.intentionalTeardown = false;
 
     if (continueAfterFeedback && this.currentFilter) {
@@ -517,11 +588,14 @@ class SparkVideoService {
       return;
     }
 
+    store.resetCall();
     store.setStage("idle");
   }
 
   private handleSessionEnd(endedByMe: boolean, continueAfterFeedback = false) {
     const store = useVideoCallStore.getState();
+    if (store.stage === "idle" || store.stage === "searching") return;
+
     const shouldFeedback = store.everConnected;
 
     releaseMediaStream(store.remoteStream);
@@ -564,11 +638,7 @@ class SparkVideoService {
     }
 
     store.setRoomId(data.roomId);
-    store.setPartner({
-      id: data.otherUser,
-      name: data.otherUserName || "Match",
-      profileUrl: data.otherUserProfilePic ?? "",
-    });
+    store.setPartner(videoPartnerFromPeerFound(data));
     store.setStage("connecting");
     store.setError(null);
 
@@ -853,6 +923,8 @@ class SparkVideoService {
         email?: string;
         name?: string;
         profileUrl?: string;
+        profileStatus?: string;
+        otherUserProfileStatus?: string;
       };
     };
 
@@ -873,11 +945,27 @@ class SparkVideoService {
     this.stopSearchTimer();
     this.stopDiscoverRetry();
 
-    const celebrationPartner: VideoPartner = snapshot ?? {
-      id: otherId,
-      name: data.otherUser?.name ?? "Match",
-      profileUrl: data.otherUser?.profileUrl ?? "",
-    };
+        const celebrationPartner: VideoPartner = snapshot
+      ? {
+          ...snapshot,
+          name: data.otherUser?.name ?? snapshot.name,
+          profileUrl: data.otherUser?.profileUrl ?? snapshot.profileUrl,
+          email: data.otherUser?.email ?? snapshot.email,
+        }
+      : {
+          id: otherId,
+          name: data.otherUser?.name ?? "Match",
+          profileUrl: data.otherUser?.profileUrl ?? "",
+          email: data.otherUser?.email,
+          profileStatus: readProfileStatus(
+            data.otherUser?.otherUserProfileStatus,
+            data.otherUser?.profileStatus,
+          ),
+          otherUserProfileStatus: readProfileStatus(
+            data.otherUser?.otherUserProfileStatus,
+            data.otherUser?.profileStatus,
+          ),
+        };
 
     store.setPartner(celebrationPartner);
     store.setRoomId(roomId ?? null);
@@ -895,6 +983,7 @@ class SparkVideoService {
   }
 
   private dismissMatchCelebration() {
+    this.cancelPendingSessionEnd();
     const store = useVideoCallStore.getState();
     store.setMutualMatch(false, null);
     store.setFeedbackPhase("done");

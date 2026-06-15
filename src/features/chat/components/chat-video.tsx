@@ -12,10 +12,16 @@ import { ChatImage } from "./chat-image";
 type ChatVideoProps = {
   attachment: ChatAttachment;
   eager?: boolean;
+  skipBlur?: boolean;
   onOpen?: (payload: { url: string; poster?: string }) => void;
 };
 
-export function ChatVideo({ attachment, eager = false, onOpen }: ChatVideoProps) {
+export function ChatVideo({
+  attachment,
+  eager = false,
+  skipBlur = false,
+  onOpen,
+}: ChatVideoProps) {
   const playUrl = useMemo(() => pickVideoPlayUrl(attachment), [attachment]);
   const posterSrc = useMemo(() => pickVideoPosterSrc(attachment), [attachment]);
   const localBlob =
@@ -48,6 +54,7 @@ export function ChatVideo({ attachment, eager = false, onOpen }: ChatVideoProps)
           src={posterSrc}
           fallbackSrc={posterSrc}
           eager={eager}
+          skipBlur={skipBlur}
           className="chat-media-img"
         />
       ) : localBlob ? (

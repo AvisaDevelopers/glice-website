@@ -9,6 +9,7 @@ import type {
   RecentMessage,
   UserLocation,
 } from "../types";
+import { parseMediaVerificationStatus, readProfileStatus } from "@/lib/verification-status";
 import { normalizeMediaUrlString } from "./resolve-media-url";
 import { isVideoFileUrl } from "./video-media";
 
@@ -82,6 +83,10 @@ function extractAttachmentRaw(
         title: json.title,
         pinned: json.pinned,
         isAdult: json.isAdult,
+        verificationStatus: parseMediaVerificationStatus(
+          json.verificationStatus,
+          "approved",
+        ),
       };
     }
     return null;
@@ -134,6 +139,10 @@ export function parseAttachment(
     userId: String(json.userId ?? ""),
     pinned: Boolean(json.pinned ?? false),
     isAdult: Boolean(json.isAdult ?? false),
+    verificationStatus: parseMediaVerificationStatus(
+      json.verificationStatus,
+      "approved",
+    ),
   };
 }
 
@@ -193,6 +202,25 @@ export function parseMatchUser(json: Record<string, unknown>): MatchUser {
     isActive: Boolean(json.active ?? false),
     isIncognito: Boolean(json.isIncognito ?? false),
     bio: String(json.bio ?? ""),
+    profileStatus: readProfileStatus(
+      json.profileStatus,
+      json.otherUserProfileStatus,
+      (json.profile as Record<string, unknown> | undefined)?.profileStatus,
+      (json.profile as Record<string, unknown> | undefined)?.status,
+    ),
+    verificationStatus: parseMediaVerificationStatus(
+      json.verificationStatus,
+      "approved",
+    ),
+    verification: (() => {
+      const raw = json.verification as Record<string, unknown> | undefined;
+      if (!raw || typeof raw !== "object") return undefined;
+      return {
+        status: String(raw.status ?? "not_submitted"),
+        deadline:
+          raw.deadline != null ? String(raw.deadline) : undefined,
+      };
+    })(),
     location: {
       type: String(loc.type ?? "Point"),
       coordinates: [coords[0] ?? 0, coords[1] ?? 0],
@@ -262,7 +290,7 @@ export function attachmentToPayload(
     userId: att.userId,
     type: att.type,
     thumbnail: att.type === "video" ? thumbnail : thumbnail || url,
-    verificationStatus: "approved",
+    verificationStatus: att.verificationStatus ?? "pending",
     isAdult: att.isAdult ?? false,
   };
 }

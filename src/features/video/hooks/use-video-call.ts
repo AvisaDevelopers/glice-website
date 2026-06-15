@@ -13,6 +13,7 @@ export function useVideoCall() {
 
   const stage = useVideoCallStore((s) => s.stage);
   const partner = useVideoCallStore((s) => s.partner);
+  const roomId = useVideoCallStore((s) => s.roomId);
   const messages = useVideoCallStore((s) => s.messages);
   const remoteStream = useVideoCallStore((s) => s.remoteStream);
   const remoteVideoOn = useVideoCallStore((s) => s.remoteVideoOn);
@@ -22,6 +23,7 @@ export function useVideoCall() {
   const roundsLeft = useVideoCallStore((s) => s.roundsLeft);
   const error = useVideoCallStore((s) => s.error);
   const onlineCount = useVideoCallStore((s) => s.onlineCount);
+  const lobbyGenderCounts = useVideoCallStore((s) => s.lobbyGenderCounts);
   const endedByMe = useVideoCallStore((s) => s.endedByMe);
   const feedbackPhase = useVideoCallStore((s) => s.feedbackPhase);
   const mutualMatch = useVideoCallStore((s) => s.mutualMatch);
@@ -89,6 +91,7 @@ export function useVideoCall() {
   return {
     stage,
     partner,
+    roomId,
     messages,
     remoteStream,
     remoteVideoOn,
@@ -98,6 +101,7 @@ export function useVideoCall() {
     roundsLeft,
     error,
     onlineCount,
+    lobbyGenderCounts,
     endedByMe,
     feedbackPhase,
     mutualMatch,

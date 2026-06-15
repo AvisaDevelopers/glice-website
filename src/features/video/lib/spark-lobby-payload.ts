@@ -34,7 +34,6 @@ export function sparkJoinedCountRequest(): typeof SPARK_DATING_EVENT_NAME {
   return SPARK_DATING_EVENT_NAME;
 }
 
-/** Flutter: `spark_count` handler in socket_bloc.dart */
 export function parseSparkCountPayload(raw: unknown): SparkCountPayload {
   if (typeof raw === "number" || typeof raw === "string") {
     const count = Number(raw);
@@ -68,4 +67,52 @@ export function parseSparkCountPayload(raw: unknown): SparkCountPayload {
     users,
     genderCounts,
   };
+}
+
+/** Flutter `sparkDatingJoinedMessage` — [count] includes the current user. */
+export function sparkDatingJoinedMessage(count: number): string {
+  const total = Math.max(0, Math.floor(count));
+  if (total <= 0) return "";
+  if (total === 1) return "Only you have joined";
+  if (total === 2) return "You & 1 other have joined";
+  return `You & ${total - 1} others have joined`;
+}
+
+/** Flutter `onlineStatus` l10n — e.g. "12 online". */
+export function onlineStatusLabel(online: number): string {
+  const n = Math.max(0, Math.floor(online));
+  return `${n} online`;
+}
+
+/** Map hero gender filter to `spark_count.genderCounts` keys (Flutter lowercase titles). */
+export function lobbyGenderKey(
+  gender: "Everyone" | "Women" | "Men",
+): string {
+  switch (gender) {
+    case "Women":
+      return "woman";
+    case "Men":
+      return "man";
+    default:
+      return "any";
+  }
+}
+
+export function lobbyGenderOnlineCount(
+  genderCounts: Record<string, number>,
+  gender: "Everyone" | "Women" | "Men",
+): number {
+  const key = lobbyGenderKey(gender);
+  const direct = genderCounts[key];
+  if (direct != null) return direct;
+
+  const fallbacks: Record<string, string[]> = {
+    any: ["any", "everyone"],
+    woman: ["woman", "women"],
+    man: ["man", "men"],
+  };
+  for (const alt of fallbacks[key] ?? [key]) {
+    if (genderCounts[alt] != null) return genderCounts[alt];
+  }
+  return 0;
 }

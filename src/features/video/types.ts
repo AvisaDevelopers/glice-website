@@ -1,3 +1,5 @@
+import type { MediaVerificationStatus } from "@/lib/verification-status";
+
 export type CallStage =
   | "idle"
   | "searching"
@@ -11,7 +13,12 @@ export type VideoPartner = {
   id: string;
   name: string;
   profileUrl: string;
+  email?: string;
   distance?: string;
+  /** Profile photo moderation — API `profileStatus`. */
+  profileStatus?: MediaVerificationStatus;
+  /** From `peer_found.otherUserProfileStatus`. */
+  otherUserProfileStatus?: MediaVerificationStatus;
 };
 
 export type VideoChatMessage = {
@@ -39,6 +46,10 @@ export type PeerFoundPayload = {
   otherUser: string;
   otherUserName: string;
   otherUserProfilePic?: string;
+  otherUserEmail?: string;
+  /** Parsed `profileStatus` from `peer_found`. */
+  otherUserProfileStatus?: MediaVerificationStatus;
+  profileStatus?: MediaVerificationStatus;
 };
 
 export type VideoFilterInput = {

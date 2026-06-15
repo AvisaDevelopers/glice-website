@@ -41,6 +41,9 @@ export type GliceUser = {
   location?: UserLocation;
   membership?: UserMembership;
   verification?: { status: string; deadline?: string };
+  /** Profile photo moderation — API `profileStatus` (pending | approved | rejected). */
+  profileStatus?: string;
+  /** Account verification badge — separate from profile photo moderation. */
   verificationStatus?: string;
   isBan?: boolean;
   isPermanentBan?: boolean;

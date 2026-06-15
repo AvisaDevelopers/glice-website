@@ -1,19 +1,19 @@
 "use client";
 
+import { ProfilePhoto } from "@/components/media/profile-photo";
 import { motion } from "framer-motion";
+import type { MediaVerificationStatus } from "@/lib/verification-status";
 
 type MatchConnectingOverlayProps = {
   partnerName: string;
   profileUrl?: string;
+  profileVerificationStatus?: MediaVerificationStatus;
 };
-
-function partnerInitial(name: string) {
-  return (name.trim()[0] ?? "?").toUpperCase();
-}
 
 export function MatchConnectingOverlay({
   partnerName,
   profileUrl,
+  profileVerificationStatus = "approved",
 }: MatchConnectingOverlayProps) {
   return (
     <motion.div
@@ -31,23 +31,22 @@ export function MatchConnectingOverlay({
         animate={{ scale: 1, y: 0 }}
         transition={{ type: "spring", stiffness: 260, damping: 22 }}
       >
-        <motion.div
-          className="match-connecting-avatar-wrap"
-          animate={{ scale: [1, 1.06, 1] }}
-          transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut" }}
-        >
-          <span className="match-connecting-ring match-connecting-ring--1" />
-          <span className="match-connecting-ring match-connecting-ring--2" />
-          <span className="match-connecting-ring match-connecting-ring--3" />
+        <div className="match-connecting-avatar-wrap">
+          <span className="match-connecting-ring match-connecting-ring--1" aria-hidden />
+          <span className="match-connecting-ring match-connecting-ring--2" aria-hidden />
+          <span className="match-connecting-ring match-connecting-ring--3" aria-hidden />
           <div className="match-connecting-avatar">
-            {profileUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={profileUrl} alt="" className="match-connecting-avatar-img" />
-            ) : (
-              partnerInitial(partnerName)
-            )}
+            <ProfilePhoto
+              name={partnerName}
+              url={profileUrl}
+              profileStatus={profileVerificationStatus}
+              verificationStatus={profileVerificationStatus}
+              className="match-connecting-avatar-photo"
+              imgClassName="match-connecting-avatar-img"
+              compact
+            />
           </div>
-        </motion.div>
+        </div>
 
         <p className="match-connecting-eyebrow">Match found</p>
         <h3 className="match-connecting-title">{partnerName}</h3>

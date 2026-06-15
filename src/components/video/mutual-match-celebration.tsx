@@ -1,44 +1,25 @@
 "use client";
 
+import { ProfilePhoto } from "@/components/media/profile-photo";
 import { motion } from "framer-motion";
 import { useEffect, useMemo, useState } from "react";
+import type { MediaVerificationStatus } from "@/lib/verification-status";
 
 type MutualMatchCelebrationProps = {
   partnerName: string;
   profileUrl?: string;
+  profileVerificationStatus?: MediaVerificationStatus;
   userProfileUrl?: string;
+  userVerificationStatus?: MediaVerificationStatus;
   userName?: string;
 };
-
-function partnerInitial(name: string) {
-  return (name.trim()[0] ?? "?").toUpperCase();
-}
-
-function AvatarBubble({
-  name,
-  url,
-  className,
-}: {
-  name: string;
-  url?: string;
-  className?: string;
-}) {
-  return (
-    <div className={`mutual-match-avatar ${className ?? ""}`}>
-      {url ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={url} alt="" className="mutual-match-avatar-img" />
-      ) : (
-        partnerInitial(name)
-      )}
-    </div>
-  );
-}
 
 export function MutualMatchCelebration({
   partnerName,
   profileUrl,
+  profileVerificationStatus = "approved",
   userProfileUrl,
+  userVerificationStatus = "approved",
   userName = "You",
 }: MutualMatchCelebrationProps) {
   const [burst, setBurst] = useState(0);
@@ -104,7 +85,13 @@ export function MutualMatchCelebration({
             animate={{ x: 0, opacity: 1 }}
             transition={{ type: "spring", delay: 0.1 }}
           >
-            <AvatarBubble name={userName} url={userProfileUrl} />
+            <ProfilePhoto
+              name={userName}
+              url={userProfileUrl}
+              verificationStatus={userVerificationStatus}
+              className="mutual-match-avatar"
+              imgClassName="mutual-match-avatar-img"
+            />
           </motion.div>
 
           <motion.div
@@ -122,7 +109,13 @@ export function MutualMatchCelebration({
             animate={{ x: 0, opacity: 1 }}
             transition={{ type: "spring", delay: 0.1 }}
           >
-            <AvatarBubble name={partnerName} url={profileUrl} />
+            <ProfilePhoto
+              name={partnerName}
+              url={profileUrl}
+              verificationStatus={profileVerificationStatus}
+              className="mutual-match-avatar"
+              imgClassName="mutual-match-avatar-img"
+            />
           </motion.div>
         </div>
 

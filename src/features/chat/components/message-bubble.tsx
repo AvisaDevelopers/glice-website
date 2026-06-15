@@ -105,6 +105,7 @@ export function MessageBubble({
                 src={imageSrc}
                 fallbackSrc={attachment.url || attachment.thumbnail}
                 eager={Boolean(attachment.localPreview)}
+                skipBlur={isUploading}
                 onClick={() => onImageClick?.(resolveMediaUrl(previewUrl))}
               />
             )}
@@ -112,6 +113,7 @@ export function MessageBubble({
               <ChatVideo
                 attachment={attachment}
                 eager={Boolean(attachment.localPreview)}
+                skipBlur={isUploading}
                 onOpen={onVideoClick}
               />
             )}

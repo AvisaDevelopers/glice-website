@@ -1,13 +1,22 @@
 "use client";
 
+import { ProfilePhoto } from "@/components/media/profile-photo";
 import { CallChatPanel } from "@/components/video/call-chat-panel";
 import { MatchConnectingOverlay } from "@/components/video/match-connecting-overlay";
 import { MediaPermissionGate } from "@/components/video/media-permission-gate";
 import { NearbySearchMotion } from "@/components/video/match-search-motion";
 import { VideoFeedbackPanel } from "@/components/video/video-feedback-panel";
 import { useUiSession } from "@/components/site/ui-session-provider";
+import { ReportUserDialog } from "@/features/report/components/report-user-dialog";
 import { useMediaStream } from "@/features/video/hooks/use-media-stream";
 import { useVideoCall } from "@/features/video/hooks/use-video-call";
+import { sparkVideoService } from "@/features/video/services/spark-video-service";
+import { profileStatusFromUser } from "@/lib/verification-status";
+import {
+  lobbyGenderOnlineCount,
+  onlineStatusLabel,
+  sparkDatingJoinedMessage,
+} from "@/features/video/lib/spark-lobby-payload";
 import { useMounted } from "@/hooks/use-mounted";
 import { AnimatePresence, motion } from "framer-motion";
 import {
@@ -78,6 +87,7 @@ export function VideoHero() {
   const {
     stage: callStage,
     partner,
+    roomId,
     messages,
     remoteStream,
     remoteVideoOn,
@@ -85,6 +95,7 @@ export function VideoHero() {
     searchSecondsLeft,
     callSecondsLeft,
     error: callError,
+    endedByMe,
     feedbackPhase,
     mutualMatch,
     toggleLayout,
@@ -95,6 +106,8 @@ export function VideoHero() {
     submitFeedback,
     sendMessage,
     notifyVideoState,
+    onlineCount,
+    lobbyGenderCounts,
   } = useVideoCall();
 
   const remoteRef = useRef<HTMLVideoElement>(null);
@@ -104,6 +117,7 @@ export function VideoHero() {
   const [minAge, setMinAge] = useState(18);
   const [maxAge, setMaxAge] = useState(35);
   const [maxDistance, setMaxDistance] = useState(50);
+  const [reportOpen, setReportOpen] = useState(false);
 
   const setMinAgeBounded = useCallback((value: number) => {
     const next = clampAge(value);
@@ -120,6 +134,17 @@ export function VideoHero() {
   const setMaxDistanceBounded = useCallback((value: number) => {
     setMaxDistance(clampDistance(value));
   }, []);
+
+  useEffect(() => {
+    if (callStage !== "feedback") {
+      setReportOpen(false);
+    }
+  }, [callStage]);
+
+  useEffect(() => {
+    if (!isLoggedIn || callStage !== "idle") return;
+    sparkVideoService.refreshJoinedCount();
+  }, [isLoggedIn, callStage, gender]);
 
   useEffect(() => {
     if (!prefOpen) return;
@@ -163,7 +188,18 @@ export function VideoHero() {
   const showChat =
     callStage === "connecting" || callStage === "connected";
   const partnerName = partner?.name ?? "Match";
-  const partnerInitialChar = partnerInitial(partnerName);
+  const joinedLobbyMessage =
+    isLoggedIn && onlineCount > 0
+      ? sparkDatingJoinedMessage(onlineCount)
+      : "";
+  const genderOnlineCount = lobbyGenderOnlineCount(lobbyGenderCounts, gender);
+  const genderOnlineLabel =
+    isLoggedIn && genderOnlineCount > 0
+      ? onlineStatusLabel(genderOnlineCount)
+      : "";
+  const userMediaStatus = profileStatusFromUser(user);
+  const partnerMediaStatus =
+    partner?.otherUserProfileStatus ?? partner?.profileStatus ?? "approved";
   const swapped = isLocalPrimary;
   const showRemoteVideo = inCall && remoteStream && remoteVideoOn;
   const showRemotePlaceholder = inCall && !showRemoteVideo;
@@ -338,18 +374,14 @@ export function VideoHero() {
                   >
                     {showPartnerInBadge ? (
                       <span className="hero-panel-badge-avatar" aria-hidden>
-                        {partner?.profileUrl ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img
-                            src={partner.profileUrl}
-                            alt=""
-                            className="hero-panel-badge-avatar-img"
-                          />
-                        ) : (
-                          <span className="hero-panel-badge-avatar-fallback">
-                            {partnerInitialChar}
-                          </span>
-                        )}
+                        <ProfilePhoto
+                          name={partnerName}
+                          url={partner?.profileUrl}
+                          profileStatus={partnerMediaStatus}
+                          className="hero-panel-badge-avatar-photo"
+                          imgClassName="hero-panel-badge-avatar-img"
+                          compact
+                        />
                       </span>
                     ) : (
                       <span className="hero-panel-badge-dot" aria-hidden />
@@ -379,9 +411,25 @@ export function VideoHero() {
                         <i className="ri-radar-line" />
                       </div>
                       <p>Your match appears here</p>
+                      {joinedLobbyMessage ? (
+                        <span className="hero-panel-idle-joined">
+                          {joinedLobbyMessage}
+                        </span>
+                      ) : isLoggedIn ? (
+                        <span className="hero-panel-idle-joined hero-panel-idle-joined--muted">
+                          Checking who&apos;s online…
+                        </span>
+                      ) : null}
                       <span>
                         Press Start to find people within {maxDistance} km
                       </span>
+                      {genderOnlineLabel ? (
+                        <span className="hero-panel-idle-online">
+                          <i className="ri-user-heart-line" aria-hidden />
+                          {genderOnlineLabel}
+                          {gender !== "Everyone" ? ` · ${gender}` : ""}
+                        </span>
+                      ) : null}
                     </div>
                   )}
 
@@ -390,6 +438,7 @@ export function VideoHero() {
                       <MatchConnectingOverlay
                         partnerName={partnerName}
                         profileUrl={partner?.profileUrl}
+                        profileVerificationStatus={partnerMediaStatus}
                       />
                     )}
                   </AnimatePresence>
@@ -425,16 +474,14 @@ export function VideoHero() {
                     <div className="hero-panel-media hero-panel-media--placeholder">
                       <div className="vc-remote-placeholder vc-remote-placeholder--live">
                         <div className="vc-remote-avatar">
-                          {partner?.profileUrl ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img
-                              src={partner.profileUrl}
-                              alt=""
-                              className="vc-remote-avatar-img"
-                            />
-                          ) : (
-                            partnerInitialChar
-                          )}
+                          <ProfilePhoto
+                            name={partnerName}
+                            url={partner?.profileUrl}
+                            profileStatus={partnerMediaStatus}
+                            className="vc-remote-avatar-photo"
+                            imgClassName="vc-remote-avatar-img"
+                            compact
+                          />
                         </div>
                         <span className="vc-remote-name">{partnerName}</span>
                       </div>
@@ -448,13 +495,21 @@ export function VideoHero() {
                       <VideoFeedbackPanel
                         partnerName={partnerName}
                         profileUrl={partner?.profileUrl}
+                        profileVerificationStatus={partnerMediaStatus}
                         userName={user?.name ?? user?.username ?? "You"}
                         userProfileUrl={user?.profileUrl}
+                        userVerificationStatus={userMediaStatus}
                         phase={feedbackPhase}
                         mutualMatch={mutualMatch}
+                        endedByMe={endedByMe}
                         onLike={() => submitFeedback(true)}
                         onPass={() => submitFeedback(false)}
                         onSkip={() => submitFeedback(null)}
+                        onReport={
+                          partner && roomId
+                            ? () => setReportOpen(true)
+                            : undefined
+                        }
                       />
                     )}
                   </AnimatePresence>
@@ -479,16 +534,14 @@ export function VideoHero() {
                     <div className="hero-panel-media hero-panel-media--placeholder">
                       <div className="vc-remote-placeholder vc-remote-placeholder--live">
                         <div className="vc-remote-avatar">
-                          {partner?.profileUrl ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img
-                              src={partner.profileUrl}
-                              alt=""
-                              className="vc-remote-avatar-img"
-                            />
-                          ) : (
-                            partnerInitialChar
-                          )}
+                          <ProfilePhoto
+                            name={partnerName}
+                            url={partner?.profileUrl}
+                            profileStatus={partnerMediaStatus}
+                            className="vc-remote-avatar-photo"
+                            imgClassName="vc-remote-avatar-img"
+                            compact
+                          />
                         </div>
                         <span className="vc-remote-name">{partnerName}</span>
                       </div>
@@ -622,7 +675,7 @@ export function VideoHero() {
                 <p className="hero-toolbar-hint">
                   {mutualMatch || feedbackPhase === "matched"
                     ? "It's a match!"
-                    : "Like or pass to continue"}
+                    : "Like, pass, or report if needed"}
                 </p>
               ) : (
                 <>
@@ -699,6 +752,17 @@ export function VideoHero() {
         onMaxAgeChange={setMaxAgeBounded}
         onMaxDistanceChange={setMaxDistanceBounded}
       />
+
+      {partner && roomId && (
+        <ReportUserDialog
+          open={reportOpen}
+          onClose={() => setReportOpen(false)}
+          reporteeId={partner.id}
+          reporteeName={partner.name}
+          roomId={roomId}
+          reporteeEmail={partner.email ?? ""}
+        />
+      )}
 
       <AuthModal />
     </>

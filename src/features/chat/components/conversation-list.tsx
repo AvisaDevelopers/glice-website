@@ -183,6 +183,10 @@ export function ConversationList({
                 active={activeRoomId === room.roomId}
                 isOnline={otherUser.isActive}
                 isSentByMe={isYou}
+                verified={otherUser.verification?.status === "approved"}
+                verification={otherUser.verification}
+                mediaVerificationStatus={otherUser.profileStatus ?? "approved"}
+                profileStatus={otherUser.profileStatus ?? "approved"}
                 onClick={() => onSelect?.(room.roomId)}
                 onDelete={() => chatSocket.deleteRoom(room.roomId)}
               />

@@ -2485,3 +2485,129 @@ body.chat-route .chat-toast-stack {
     -webkit-tap-highlight-color: transparent;
   }
 }
+
+/* Media moderation — blur + centered pending/rejected graphic (no text tags) */
+.moderated-image {
+  position: relative;
+  display: block;
+  overflow: hidden;
+}
+
+.moderated-image--avatar {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  overflow: hidden;
+}
+
+.moderated-image-media {
+  display: block;
+  width: 100%;
+  height: 100%;
+  transform: scale(1.04);
+}
+
+.moderated-image--avatar .moderated-image-media,
+.moderated-image--avatar .moderated-image-media img,
+.moderated-image--avatar > img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  border-radius: 50%;
+}
+
+.moderated-image--avatar .moderated-image-overlay {
+  border-radius: 50%;
+}
+
+.moderated-image--pending .moderated-image-media,
+.moderated-image--rejected .moderated-image-media,
+.moderated-image--pending .moderated-image-target,
+.moderated-image--rejected .moderated-image-target {
+  filter: blur(10px);
+  -webkit-filter: blur(10px);
+}
+
+.moderated-image--card.moderated-image--pending .moderated-image-media,
+.moderated-image--card.moderated-image--rejected .moderated-image-media,
+.moderated-image--card.moderated-image--pending .moderated-image-target,
+.moderated-image--card.moderated-image--rejected .moderated-image-target {
+  filter: blur(35px);
+  -webkit-filter: blur(35px);
+}
+
+.moderated-image--chat {
+  width: 100%;
+  border-radius: 0.75rem;
+}
+
+.moderated-image-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+  background: rgb(0 0 0 / 0.22);
+}
+
+.moderated-image--pending .moderated-image-overlay {
+  background: rgb(0 0 0 / 0.18);
+}
+
+.moderated-image--rejected .moderated-image-overlay {
+  background: rgb(0 0 0 / 0.35);
+}
+
+.moderated-image-placeholder {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 3.25rem;
+  height: 3.25rem;
+  border-radius: 0.75rem;
+  color: rgb(255 255 255 / 0.92);
+  background: rgb(0 0 0 / 0.45);
+  border: 1px solid rgb(255 255 255 / 0.14);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.28);
+}
+
+.moderated-image-overlay--compact .moderated-image-placeholder {
+  width: 1.65rem;
+  height: 1.65rem;
+  border-radius: 0.4rem;
+  box-shadow: 0 4px 12px rgb(0 0 0 / 0.25);
+}
+
+.moderated-image-placeholder-icon {
+  width: 1.35rem;
+  height: 1.35rem;
+}
+
+.moderated-image-overlay--compact .moderated-image-placeholder-icon {
+  width: 0.8rem;
+  height: 0.8rem;
+}
+
+.moderated-image-placeholder-badge {
+  position: absolute;
+  right: -0.2rem;
+  bottom: -0.2rem;
+  width: 0.95rem;
+  height: 0.95rem;
+  padding: 0.1rem;
+  border-radius: 9999px;
+  color: #fbbf24;
+  background: rgb(0 0 0 / 0.85);
+  border: 1px solid rgb(255 255 255 / 0.2);
+}
+
+.moderated-image-overlay--compact .moderated-image-placeholder-badge {
+  width: 0.62rem;
+  height: 0.62rem;
+  right: -0.12rem;
+  bottom: -0.12rem;
+}

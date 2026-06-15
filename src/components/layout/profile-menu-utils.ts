@@ -1,12 +1,11 @@
 import type { GliceUser } from "@/features/auth/types";
 import type { ResolvedCountry } from "@/components/layout/resolve-country-from-ip";
+import { isAccountVerified } from "@/lib/verification-status";
 import { Globe, Mars, UserRound, Venus } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 export function isVerified(user: GliceUser | null): boolean {
-  if (!user) return false;
-  const status = user.verification?.status ?? user.verificationStatus ?? "";
-  return status.toLowerCase() === "verified";
+  return isAccountVerified(user?.verification, user?.verificationStatus);
 }
 
 export function countryCodeToFlag(code: string): string {

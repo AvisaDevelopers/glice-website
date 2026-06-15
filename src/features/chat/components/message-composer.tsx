@@ -142,6 +142,7 @@ export function MessageComposer({ room }: MessageComposerProps) {
         userId: user._id,
         pinned: false,
         isAdult: false,
+        verificationStatus: "pending",
         uploadProgress: 0,
         audioDurationSec:
           type === "audio" ? audioDurationSec : undefined,
@@ -204,6 +205,7 @@ export function MessageComposer({ room }: MessageComposerProps) {
           userId: user._id,
           pinned: false,
           isAdult: uploaded.isAdult,
+          verificationStatus: "pending",
           audioDurationSec:
             type === "audio" ? audioDurationSec : undefined,
         };

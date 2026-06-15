@@ -24,7 +24,6 @@ import { useUiSession } from "@/components/site/ui-session-provider";
 import { getUser } from "@/features/auth/api/auth-api";
 import { useSocketStore } from "@/features/chat/stores/socket-store";
 import {
-  BadgeCheck,
   Check,
   Copy,
   Headphones,
@@ -33,6 +32,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import Link from "next/link";
+import { profileStatusFromUser } from "@/lib/verification-status";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
@@ -97,6 +97,7 @@ export function HomeProfileMenu() {
   const genderDisplay = getGenderDisplay(user?.gender);
   const GenderIcon = genderDisplay?.Icon;
   const referralCode = getReferralCode(user);
+  const mediaVerificationStatus = profileStatusFromUser(user);
 
   const copyReferralCode = async () => {
     if (!referralCode) return;
@@ -124,6 +125,10 @@ export function HomeProfileMenu() {
               size="sm"
               isOnline={isOnline}
               showStatus
+              verified={verified}
+              verification={user?.verification}
+              mediaVerificationStatus={mediaVerificationStatus}
+              profileStatus={mediaVerificationStatus}
             />
           </button>
         </DropdownMenuTrigger>
@@ -138,16 +143,14 @@ export function HomeProfileMenu() {
                 size="lg"
                 isOnline={isOnline}
                 showStatus
+                verified={verified}
+                verification={user?.verification}
+                mediaVerificationStatus={mediaVerificationStatus}
+              profileStatus={mediaVerificationStatus}
               />
               <div className="home-profile-hero-copy">
                 <p className="home-profile-name">
                   <span className="truncate">{username}</span>
-                  {verified && (
-                    <BadgeCheck
-                      className="home-profile-verified"
-                      aria-label="Verified"
-                    />
-                  )}
                 </p>
                 {email && (
                   <p className="home-profile-email truncate">{email}</p>

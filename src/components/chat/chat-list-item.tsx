@@ -2,6 +2,7 @@
 
 import { CheckCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
+import type { MediaVerificationStatus } from "@/lib/verification-status";
 import { ChatTypingIndicator } from "./typing-indicator";
 import { UserAvatar } from "./user-avatar";
 
@@ -15,6 +16,10 @@ type ChatListItemProps = {
   active?: boolean;
   isOnline?: boolean;
   isSentByMe?: boolean;
+  verified?: boolean;
+  verification?: { status?: string };
+  mediaVerificationStatus?: MediaVerificationStatus;
+  profileStatus?: MediaVerificationStatus;
   onClick: () => void;
   onDelete?: () => void;
 };
@@ -29,6 +34,10 @@ export function ChatListItem({
   active = false,
   isOnline = false,
   isSentByMe = false,
+  verified,
+  verification,
+  mediaVerificationStatus,
+  profileStatus,
   onClick,
   onDelete,
 }: ChatListItemProps) {
@@ -53,6 +62,10 @@ export function ChatListItem({
         url={avatarUrl}
         isOnline={isOnline}
         showStatus
+        verified={verified}
+        verification={verification}
+        mediaVerificationStatus={mediaVerificationStatus}
+        profileStatus={profileStatus ?? mediaVerificationStatus}
       />
       <div className="min-w-0 flex-1">
         <div className="flex items-baseline justify-between gap-2">

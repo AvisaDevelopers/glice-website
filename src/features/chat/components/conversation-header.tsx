@@ -45,6 +45,10 @@ export function ConversationHeader({ room, onBack }: ConversationHeaderProps) {
           size="lg"
           isOnline={otherUser.isActive}
           showStatus
+          verified={otherUser.verification?.status === "approved"}
+          verification={otherUser.verification}
+          mediaVerificationStatus={otherUser.profileStatus ?? "approved"}
+          profileStatus={otherUser.profileStatus ?? "approved"}
         />
 
         <div className="min-w-0 flex-1">

@@ -2,7 +2,13 @@
 
 import { ImageIcon } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { ModeratedImage } from "@/components/media/moderated-image";
 import { cn } from "@/lib/utils";
+import {
+  isMediaApproved,
+  type MediaBlurVariant,
+  type MediaVerificationStatus,
+} from "@/lib/verification-status";
 import { attachmentImageCandidates } from "../lib/pick-attachment-src";
 import type { ChatAttachment } from "../types";
 import { mediaDisplayCandidates, resolveMediaUrl } from "../lib/resolve-media-url";
@@ -15,6 +21,9 @@ type ChatImageProps = {
   className?: string;
   onClick?: () => void;
   eager?: boolean;
+  verificationStatus?: MediaVerificationStatus;
+  blurVariant?: MediaBlurVariant;
+  skipBlur?: boolean;
 };
 
 function buildCandidates(
@@ -43,6 +52,9 @@ export function ChatImage({
   className,
   onClick,
   eager = false,
+  verificationStatus,
+  blurVariant = "tile",
+  skipBlur = false,
 }: ChatImageProps) {
   const candidates = useMemo(
     () => buildCandidates(src, fallbackSrc, attachment),
@@ -55,6 +67,9 @@ export function ChatImage({
 
   const resolved = candidates[index] ?? "";
   const isBlob = resolved.startsWith("blob:");
+  const status =
+    verificationStatus ?? attachment?.verificationStatus ?? "approved";
+  const needsModeration = !isBlob && !isMediaApproved(status);
 
   useEffect(() => {
     setIndex(0);
@@ -96,6 +111,19 @@ export function ChatImage({
     />
   );
 
+  const wrapped = needsModeration ? (
+    <ModeratedImage
+      verificationStatus={status}
+      blurVariant={blurVariant}
+      skipBlur={skipBlur}
+      className="moderated-image--chat"
+    >
+      {img}
+    </ModeratedImage>
+  ) : (
+    img
+  );
+
   if (onClick) {
     return (
       <button
@@ -109,7 +137,7 @@ export function ChatImage({
         {!loaded && !isBlob && (
           <span className="chat-media-placeholder absolute inset-0" />
         )}
-        {img}
+        {wrapped}
       </button>
     );
   }
@@ -119,7 +147,7 @@ export function ChatImage({
       {!loaded && !isBlob && (
         <span className="chat-media-placeholder absolute inset-0" />
       )}
-      {img}
+      {wrapped}
     </span>
   );
 }

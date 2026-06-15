@@ -85,7 +85,9 @@ export function ReportUserDialog({
         files,
       });
       onClose();
-      setBlockPromptOpen(true);
+      if (reporteeEmail.trim()) {
+        setBlockPromptOpen(true);
+      }
     } catch (e) {
       setError(
         e instanceof Error ? e.message : "Could not submit report.",

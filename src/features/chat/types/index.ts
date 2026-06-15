@@ -1,3 +1,5 @@
+import type { MediaVerificationStatus } from "@/lib/verification-status";
+
 export type MessageStatus = "sending" | "delivered" | "read" | "deleted";
 
 export type AttachmentType = "image" | "video" | "audio";
@@ -12,6 +14,7 @@ export type ChatAttachment = {
   userId: string;
   pinned: boolean;
   isAdult: boolean;
+  verificationStatus?: MediaVerificationStatus;
   /** Client-only blob preview while uploading */
   localPreview?: string;
   /** Client-only upload progress 0–100 */
@@ -48,6 +51,9 @@ export type MatchUser = {
   isActive: boolean;
   isIncognito: boolean;
   bio: string;
+  profileStatus?: MediaVerificationStatus;
+  verificationStatus?: MediaVerificationStatus;
+  verification?: { status: string; deadline?: string };
   location: {
     type: string;
     coordinates: [number, number];
