@@ -1,17 +1,34 @@
 "use client";
 
 import { FaqSection } from "@/components/marketing/faq-section";
+import { sendContactUs } from "@/features/contact/api/contact-api";
+import { getErrorMessage } from "@/features/auth/lib/get-error-message";
 import Link from "next/link";
 import { useState } from "react";
 
 export function ContactPageContent() {
+  const [error, setError] = useState<string | null>(null);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setShowSuccess(true);
-    event.currentTarget.reset();
-    window.setTimeout(() => setShowSuccess(false), 5000);
+    const form = event.currentTarget;
+    setError(null);
+    setShowSuccess(false);
+    setLoading(true);
+
+    try {
+      await sendContactUs(form);
+
+      setShowSuccess(true);
+      form.reset();
+      window.setTimeout(() => setShowSuccess(false), 5000);
+    } catch (err) {
+      setError(getErrorMessage(err, "Could not send your message. Please try again."));
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -181,11 +198,24 @@ export function ContactPageContent() {
                   </span>
                 </label>
 
-                <button type="submit" className="btn-primary">
-                  <span>Send message</span>
+                <button type="submit" className="btn-primary" disabled={loading}>
+                  <span>{loading ? "Sending…" : "Send message"}</span>
                   <i className="ri-send-plane-2-line" />
                 </button>
               </form>
+
+              {error && (
+                <div
+                  className="mt-6 flex items-center gap-3 rounded-xl p-4"
+                  style={{
+                    background: "rgba(239,68,68,0.08)",
+                    border: "1px solid rgba(239,68,68,0.35)",
+                  }}
+                >
+                  <i className="ri-error-warning-line text-xl text-textMuted" />
+                  <p className="text-sm text-textMain">{error}</p>
+                </div>
+              )}
 
               {showSuccess && (
                 <div
