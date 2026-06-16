@@ -17,9 +17,9 @@ import { onboardingRoutes } from "@/features/onboarding/api/routes";
 import { apiClient } from "@/lib/api-client";
 
 const DEFAULT_GENDERS: AppGenderOption[] = [
-  { title: "Man", url: "" },
-  { title: "Woman", url: "" },
-  { title: "NonBinary", url: "" },
+  { title: "Male", url: "" },
+  { title: "Female", url: "" },
+  { title: "Other", url: "" },
 ];
 
 function unwrapList(data: unknown): unknown[] {

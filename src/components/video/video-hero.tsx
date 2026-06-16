@@ -30,7 +30,10 @@ import { ArFilterRail } from "./ar-filter-rail";
 import { AuthModal } from "./auth-modal";
 import { PreferenceModal } from "./preference-modal";
 
-const GENDER_OPTIONS = ["Everyone", "Women", "Men"] as const;
+import {
+  GENDER_FILTER_OPTIONS,
+  type GenderFilterOption,
+} from "@/lib/gender-options";
 
 function formatTimer(seconds: number) {
   const m = Math.floor(seconds / 60);
@@ -110,7 +113,7 @@ export function VideoHero() {
   } = useVideoCall();
 
   const remoteRef = useRef<HTMLVideoElement>(null);
-  const [gender, setGender] = useState<(typeof GENDER_OPTIONS)[number]>("Everyone");
+  const [gender, setGender] = useState<GenderFilterOption>("Everyone");
   const [genderMenuOpen, setGenderMenuOpen] = useState(false);
   const [prefOpen, setPrefOpen] = useState(false);
   const [minAge, setMinAge] = useState(18);
@@ -409,7 +412,7 @@ export function VideoHero() {
                   {callStage === "idle" && (
                     <div className="hero-panel-idle hero-panel-idle--remote">
                       <div className="hero-panel-idle-icon" aria-hidden>
-                        <i className="ri-radar-line" />
+                        <i className="ri-user-3-line" />
                       </div>
                       <p>Your match appears here</p>
                       {joinedLobbyMessage ? (
@@ -677,7 +680,7 @@ export function VideoHero() {
                     </button>
                     {genderMenuOpen && (
                       <div className="hero-toolbar-menu" role="listbox">
-                        {GENDER_OPTIONS.map((option) => (
+                        {GENDER_FILTER_OPTIONS.map((option) => (
                           <button
                             key={option}
                             type="button"

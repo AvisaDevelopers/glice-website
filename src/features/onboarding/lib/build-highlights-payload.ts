@@ -1,5 +1,8 @@
 import type { OnboardingDraft } from "@/features/onboarding/types";
 import type { UserPhone } from "@/features/auth/types";
+import { normalizeGenderKey } from "@/lib/gender-options";
+
+export { normalizeGenderKey };
 
 const EMPTY_PHONE: UserPhone = {
   code: "",
@@ -7,10 +10,6 @@ const EMPTY_PHONE: UserPhone = {
   country: "",
   number: "",
 };
-
-export function normalizeGenderKey(title: string): string {
-  return title.split(" ").join("").toLowerCase();
-}
 
 export function buildHighlightsPayload(
   draft: OnboardingDraft,

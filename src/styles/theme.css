@@ -2321,6 +2321,14 @@ html:has(body.video-session-locked) {
     color: var(--primary);
     margin-bottom: 4px;
 }
+.hero-panel-idle--remote .hero-panel-idle-icon {
+    border-style: dashed;
+    background: rgba(255, 255, 255, 0.04);
+    color: rgba(255, 255, 255, 0.55);
+}
+.hero-panel-idle--remote .hero-panel-idle-icon i {
+    font-size: 2rem;
+}
 .hero-panel-idle p {
     margin: 0;
     font-size: .95rem;

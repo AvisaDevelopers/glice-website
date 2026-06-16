@@ -84,23 +84,19 @@ export function onlineStatusLabel(online: number): string {
   return `${n} online`;
 }
 
+import {
+  type GenderFilterOption,
+  lobbyGenderKey as filterToLobbyKey,
+} from "@/lib/gender-options";
+
 /** Map hero gender filter to `spark_count.genderCounts` keys (Flutter lowercase titles). */
-export function lobbyGenderKey(
-  gender: "Everyone" | "Women" | "Men",
-): string {
-  switch (gender) {
-    case "Women":
-      return "woman";
-    case "Men":
-      return "man";
-    default:
-      return "any";
-  }
+export function lobbyGenderKey(gender: GenderFilterOption): string {
+  return filterToLobbyKey(gender);
 }
 
 export function lobbyGenderOnlineCount(
   genderCounts: Record<string, number>,
-  gender: "Everyone" | "Women" | "Men",
+  gender: GenderFilterOption,
 ): number {
   const key = lobbyGenderKey(gender);
   const direct = genderCounts[key];
@@ -108,8 +104,9 @@ export function lobbyGenderOnlineCount(
 
   const fallbacks: Record<string, string[]> = {
     any: ["any", "everyone"],
-    woman: ["woman", "women"],
-    man: ["man", "men"],
+    female: ["female", "woman", "women"],
+    male: ["male", "man", "men"],
+    other: ["other", "nonbinary", "non-binary"],
   };
   for (const alt of fallbacks[key] ?? [key]) {
     if (genderCounts[alt] != null) return genderCounts[alt];

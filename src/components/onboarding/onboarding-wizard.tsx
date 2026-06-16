@@ -10,6 +10,10 @@ import {
 import { setHomeTabPreference } from "@/features/onboarding/lib/home-tab-preference";
 import { normalizeGenderKey } from "@/features/onboarding/lib/build-highlights-payload";
 import {
+  formatGenderDisplayLabel,
+  genderIconClass,
+} from "@/lib/gender-options";
+import {
   HOME_TAB_LIVE_VIDEO,
   HOME_TAB_SWIPE,
   ONBOARDING_STEPS,
@@ -47,10 +51,6 @@ function cmToFeetInches(cm: number) {
 
 function feetInchesToCm(feet: number, inches: number) {
   return Math.round((feet * 12 + inches) * 2.54);
-}
-
-function formatGenderLabel(title: string) {
-  return title.replace(/([a-z])([A-Z])/g, "$1 $2");
 }
 
 export function OnboardingWizard() {
@@ -438,17 +438,11 @@ export function OnboardingWizard() {
                         />
                       ) : (
                         <i
-                          className={
-                            key.includes("woman")
-                              ? "ri-women-line"
-                              : key.includes("non")
-                                ? "ri-genderless-line"
-                                : "ri-men-line"
-                          }
+                          className={genderIconClass(key)}
                           aria-hidden
                         />
                       )}
-                      <span>{formatGenderLabel(gender.title)}</span>
+                      <span>{formatGenderDisplayLabel(gender.title)}</span>
                     </button>
                   );
                 })}
