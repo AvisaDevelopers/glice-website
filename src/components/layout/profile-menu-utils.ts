@@ -20,16 +20,16 @@ export function normalizeGenderValue(raw: unknown): string {
   if (raw == null || raw === "") return "";
 
   if (typeof raw === "number") {
-    if (raw === 0) return "man";
-    if (raw === 1) return "woman";
+    if (raw === 0) return "male";
+    if (raw === 1) return "female";
     return "";
   }
 
   const value = String(raw).trim().toLowerCase().replace(/\s+/g, "");
   if (!value) return "";
 
-  if (value === "0") return "man";
-  if (value === "1") return "woman";
+  if (value === "0") return "male";
+  if (value === "1") return "female";
 
   if (
     value === "woman" ||
@@ -37,11 +37,19 @@ export function normalizeGenderValue(raw: unknown): string {
     value === "female" ||
     value === "f"
   ) {
-    return "woman";
+    return "female";
   }
 
   if (value === "man" || value === "men" || value === "male" || value === "m") {
-    return "man";
+    return "male";
+  }
+
+  if (
+    value === "other" ||
+    value === "nonbinary" ||
+    value === "non-binary"
+  ) {
+    return "other";
   }
 
   return value;
@@ -94,10 +102,10 @@ export function getGenderDisplay(raw: unknown): {
   const value = normalizeGenderValue(raw);
   if (!value) return null;
 
-  if (value === "man") {
+  if (value === "male") {
     return { label: "Male", Icon: Mars };
   }
-  if (value === "woman") {
+  if (value === "female") {
     return { label: "Female", Icon: Venus };
   }
   if (value === "other") {

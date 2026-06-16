@@ -35,8 +35,9 @@ function callTypeLabel(type?: RandomCallFilter) {
 function genderLabel(gender?: string) {
   if (!gender) return null;
   const value = gender.toLowerCase();
-  if (value === "man" || value === "male") return "Man";
-  if (value === "woman" || value === "female") return "Woman";
+  if (value === "man" || value === "male") return "Male";
+  if (value === "woman" || value === "female") return "Female";
+  if (value === "other" || value === "nonbinary") return "Other";
   return gender.charAt(0).toUpperCase() + gender.slice(1);
 }
 

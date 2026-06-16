@@ -47,6 +47,12 @@ export type GliceUser = {
   verificationStatus?: string;
   isBan?: boolean;
   isPermanentBan?: boolean;
+  bio?: string;
+  height?: number;
+  isFeet?: boolean;
+  speaks?: string;
+  interests?: string[];
+  lookingFor?: string;
 };
 
 export type AuthResponse = {

@@ -10,6 +10,7 @@ export const authRoutes = {
   updatePassword: `${AUTH_PREFIX}/update_password`,
   getUser: (identifier: string) =>
     `${AUTH_PREFIX}/get_user/${encodeURIComponent(identifier)}`,
+  updateUser: `${AUTH_PREFIX}/update_user`,
 } as const;
 
 export const refreshTokenRoute = "/refereshtoken/api";
