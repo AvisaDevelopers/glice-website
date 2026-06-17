@@ -36,20 +36,12 @@ export function formatGenderDisplayLabel(title: string): string {
   }
 }
 
-export function genderFilterToLookingFor(gender: GenderFilterOption): string {
-  switch (gender) {
-    case "Female":
-      return "female";
-    case "Male":
-      return "male";
-    case "Other":
-      return "other";
-    default:
-      return "any";
-  }
+export function genderFilterToLookingFor(gender: string): string {
+  if (gender === "Everyone") return "any";
+  return normalizeGenderKey(gender);
 }
 
-export function lobbyGenderKey(gender: GenderFilterOption): string {
+export function lobbyGenderKey(gender: string): string {
   return genderFilterToLookingFor(gender);
 }
 

@@ -53,9 +53,10 @@ export type PeerFoundPayload = {
 };
 
 export type VideoFilterInput = {
-  gender: "Everyone" | "Female" | "Male" | "Other";
+  gender: string;
   minAge: number;
   maxAge: number;
+  minDistance: number;
   maxDistance: number;
 };
 

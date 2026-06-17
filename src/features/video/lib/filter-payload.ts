@@ -19,7 +19,7 @@ export function buildDiscoverFilter(
     minAge: input.minAge,
     maxAge: input.maxAge,
     interest: "Any",
-    minDistance: 1,
+    minDistance: input.minDistance,
     maxDistance: maxDistanceOut,
     lookingFor: genderFilterToLookingFor(input.gender),
     location: location ?? null,

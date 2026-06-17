@@ -3347,6 +3347,12 @@ html:has(body.video-session-locked) {
     font-size: 1rem;
     flex-shrink: 0;
 }
+.hero-toolbar-gender-icon {
+    width: 1rem;
+    height: 1rem;
+    flex-shrink: 0;
+    object-fit: contain;
+}
 .hero-toolbar-menu-item:hover {
     background: rgba(255, 255, 255, 0.05);
     color: var(--text);
@@ -4369,6 +4375,54 @@ body:not(.is-logged-in) .hero-user-ui { display: none; }
 }
 .pref-modal-section:last-of-type {
     margin-bottom: 0;
+}
+.pref-modal-gender-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+}
+.pref-modal-gender-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 88px;
+    padding: 12px 10px;
+    border-radius: 12px;
+    border: 1px solid var(--hair-2);
+    background: rgba(255, 255, 255, 0.03);
+    color: var(--muted);
+    font-family: inherit;
+    font-size: .8125rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: border-color 0.2s ease, background 0.2s ease, color 0.2s ease;
+}
+.pref-modal-gender-card i {
+    font-size: 1.35rem;
+}
+.pref-modal-gender-icon {
+    width: 28px;
+    height: 28px;
+    object-fit: contain;
+}
+.pref-modal-gender-card.is-active {
+    border-color: rgba(50, 230, 161, 0.45);
+    background: rgba(50, 230, 161, 0.1);
+    color: var(--primary);
+}
+.pref-modal-gender-card:hover {
+    border-color: var(--hair);
+    color: var(--text);
+}
+.hero-toolbar-btn--prefs .hero-toolbar-prefs-label {
+    display: inline;
+}
+@media (max-width: 420px) {
+    .hero-toolbar-btn--prefs .hero-toolbar-prefs-label {
+        display: none;
+    }
 }
 .pref-modal-section-head {
     display: flex;

@@ -84,19 +84,16 @@ export function onlineStatusLabel(online: number): string {
   return `${n} online`;
 }
 
-import {
-  type GenderFilterOption,
-  lobbyGenderKey as filterToLobbyKey,
-} from "@/lib/gender-options";
+import { lobbyGenderKey as filterToLobbyKey } from "@/lib/gender-options";
 
 /** Map hero gender filter to `spark_count.genderCounts` keys (Flutter lowercase titles). */
-export function lobbyGenderKey(gender: GenderFilterOption): string {
+export function lobbyGenderKey(gender: string): string {
   return filterToLobbyKey(gender);
 }
 
 export function lobbyGenderOnlineCount(
   genderCounts: Record<string, number>,
-  gender: GenderFilterOption,
+  gender: string,
 ): number {
   const key = lobbyGenderKey(gender);
   const direct = genderCounts[key];

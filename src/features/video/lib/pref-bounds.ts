@@ -9,14 +9,22 @@ export function clampAge(value: number): number {
   return Math.min(PREF_AGE_MAX, Math.max(PREF_AGE_MIN, Math.round(value)));
 }
 
-export function clampDistance(value: number): number {
-  if (!Number.isFinite(value)) return PREF_DISTANCE_MIN;
-  const stepped =
-    Math.round(value / PREF_DISTANCE_STEP) * PREF_DISTANCE_STEP;
-  return Math.min(
-    PREF_DISTANCE_MAX,
-    Math.max(PREF_DISTANCE_MIN, stepped),
-  );
+export function distanceStepForRange(min: number, max: number): number {
+  if (max - min <= 100) return 1;
+  return PREF_DISTANCE_STEP;
+}
+
+export function clampDistance(
+  value: number,
+  min = PREF_DISTANCE_MIN,
+  max = PREF_DISTANCE_MAX,
+): number {
+  if (!Number.isFinite(value)) return min;
+  const safeMin = Math.max(1, min);
+  const safeMax = Math.max(safeMin, max);
+  const step = distanceStepForRange(safeMin, safeMax);
+  const stepped = Math.round(value / step) * step;
+  return Math.min(safeMax, Math.max(safeMin, stepped));
 }
 
 export function normalizeAgeRange(

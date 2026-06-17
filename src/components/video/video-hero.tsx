@@ -20,21 +20,26 @@ import {
 import { useMounted } from "@/hooks/use-mounted";
 import { AnimatePresence, motion } from "framer-motion";
 import {
-  clampAge,
   clampDistance,
-  normalizeAgeRange,
 } from "@/features/video/lib/pref-bounds";
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  fetchVideoMatchRestrictions,
+  videoGenderFilterOptions,
+  VIDEO_MATCH_DEFAULT_RESTRICTIONS,
+  type VideoMatchRestrictions,
+} from "@/features/video/api/match-restrictions-api";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useArFilters } from "@/features/ar-filters/hooks/use-ar-filters";
 import { ArFilterRail } from "./ar-filter-rail";
 import { AuthModal } from "./auth-modal";
 import { PreferenceModal } from "./preference-modal";
 
-import {
-  GENDER_FILTER_OPTIONS,
-  genderIconClass,
-  type GenderFilterOption,
-} from "@/lib/gender-options";
+import { genderIconClass } from "@/lib/gender-options";
+import type { VideoGenderFilterOption } from "@/features/video/api/match-restrictions-api";
+
+function GenderFilterIcon({ option }: { option: VideoGenderFilterOption }) {
+  return <i className={genderIconClass(option.title)} aria-hidden />;
+}
 
 function formatTimer(seconds: number) {
   const m = Math.floor(seconds / 60);
@@ -114,29 +119,53 @@ export function VideoHero() {
   } = useVideoCall();
 
   const remoteRef = useRef<HTMLVideoElement>(null);
-  const [gender, setGender] = useState<GenderFilterOption>("Everyone");
+  const [gender, setGender] = useState("Everyone");
   const [genderMenuOpen, setGenderMenuOpen] = useState(false);
   const [prefOpen, setPrefOpen] = useState(false);
-  const [minAge, setMinAge] = useState(18);
-  const [maxAge, setMaxAge] = useState(35);
   const [maxDistance, setMaxDistance] = useState(50);
+  const [restrictions, setRestrictions] = useState<VideoMatchRestrictions>(
+    VIDEO_MATCH_DEFAULT_RESTRICTIONS,
+  );
   const [reportOpen, setReportOpen] = useState(false);
 
-  const setMinAgeBounded = useCallback((value: number) => {
-    const next = clampAge(value);
-    setMinAge(next);
-    setMaxAge((prev) => (next > prev ? next : prev));
+  const distanceMin = restrictions.distanceMin;
+  const distanceMax = restrictions.distanceMax;
+  const genderOptions = useMemo(
+    () => videoGenderFilterOptions(restrictions),
+    [restrictions],
+  );
+  const selectedGender =
+    genderOptions.find((option) => option.title === gender) ??
+    genderOptions[0];
+
+  const setMaxDistanceBounded = useCallback(
+    (value: number) => {
+      setMaxDistance(clampDistance(value, distanceMin, distanceMax));
+    },
+    [distanceMin, distanceMax],
+  );
+
+  useEffect(() => {
+    let cancelled = false;
+
+    void fetchVideoMatchRestrictions().then((data) => {
+      if (cancelled) return;
+      setRestrictions(data);
+      setMaxDistance((prev) =>
+        clampDistance(prev, data.distanceMin, data.distanceMax),
+      );
+    });
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
-  const setMaxAgeBounded = useCallback((value: number) => {
-    const next = clampAge(value);
-    setMaxAge(next);
-    setMinAge((prev) => (next < prev ? next : prev));
-  }, []);
-
-  const setMaxDistanceBounded = useCallback((value: number) => {
-    setMaxDistance(clampDistance(value));
-  }, []);
+  useEffect(() => {
+    if (!genderOptions.some((option) => option.title === gender)) {
+      setGender("Everyone");
+    }
+  }, [gender, genderOptions]);
 
   useEffect(() => {
     if (callStage !== "feedback") {
@@ -151,12 +180,9 @@ export function VideoHero() {
 
   useEffect(() => {
     if (!prefOpen) return;
-    const ages = normalizeAgeRange(minAge, maxAge);
-    const distance = clampDistance(maxDistance);
-    if (ages.minAge !== minAge) setMinAge(ages.minAge);
-    if (ages.maxAge !== maxAge) setMaxAge(ages.maxAge);
+    const distance = clampDistance(maxDistance, distanceMin, distanceMax);
     if (distance !== maxDistance) setMaxDistance(distance);
-  }, [prefOpen]); // eslint-disable-line react-hooks/exhaustive-deps -- sanitize once when opening
+  }, [prefOpen, maxDistance, distanceMin, distanceMax]);
   const [isMuted, setIsMuted] = useState(false);
   const genderMenuRef = useRef<HTMLDivElement>(null);
   const mounted = useMounted();
@@ -220,11 +246,12 @@ export function VideoHero() {
   const buildFilter = useCallback(
     () => ({
       gender,
-      minAge,
-      maxAge,
+      minAge: restrictions?.ageMin ?? 18,
+      maxAge: restrictions?.ageMax ?? 60,
+      minDistance: restrictions?.distanceMin ?? 1,
       maxDistance,
     }),
-    [gender, minAge, maxAge, maxDistance],
+    [gender, maxDistance, restrictions],
   );
 
   useEffect(() => {
@@ -675,26 +702,26 @@ export function VideoHero() {
                       disabled={isBusy}
                       onClick={() => setGenderMenuOpen((open) => !open)}
                     >
-                      <i className={genderIconClass(gender)} aria-hidden />
-                      <span>{gender}</span>
+                      <GenderFilterIcon option={selectedGender} />
+                      <span>{selectedGender.title}</span>
                       <i className="ri-arrow-down-s-line" aria-hidden />
                     </button>
                     {genderMenuOpen && (
                       <div className="hero-toolbar-menu" role="listbox">
-                        {GENDER_FILTER_OPTIONS.map((option) => (
+                        {genderOptions.map((option) => (
                           <button
-                            key={option}
+                            key={option.title}
                             type="button"
                             role="option"
-                            aria-selected={gender === option}
-                            className={`hero-toolbar-menu-item${gender === option ? " is-active" : ""}`}
+                            aria-selected={gender === option.title}
+                            className={`hero-toolbar-menu-item${gender === option.title ? " is-active" : ""}`}
                             onClick={() => {
-                              setGender(option);
+                              setGender(option.title);
                               setGenderMenuOpen(false);
                             }}
                           >
-                            <i className={genderIconClass(option)} aria-hidden />
-                            <span>{option}</span>
+                            <GenderFilterIcon option={option} />
+                            <span>{option.title}</span>
                           </button>
                         ))}
                       </div>
@@ -708,9 +735,7 @@ export function VideoHero() {
                     onClick={() => setPrefOpen(true)}
                   >
                     <i className="ri-equalizer-line" aria-hidden />
-                    <span>
-                      {minAge}–{maxAge} · {maxDistance} km
-                    </span>
+                    <span>{maxDistance} km</span>
                   </button>
 
                   <button
@@ -731,13 +756,11 @@ export function VideoHero() {
 
       <PreferenceModal
         open={prefOpen}
-        minAge={minAge}
-        maxAge={maxAge}
         maxDistance={maxDistance}
+        distanceMin={distanceMin}
+        distanceMax={distanceMax}
         onClose={() => setPrefOpen(false)}
         onDone={() => setPrefOpen(false)}
-        onMinAgeChange={setMinAgeBounded}
-        onMaxAgeChange={setMaxAgeBounded}
         onMaxDistanceChange={setMaxDistanceBounded}
       />
 
