@@ -3353,6 +3353,9 @@ html:has(body.video-session-locked) {
     flex-shrink: 0;
     object-fit: contain;
 }
+.hero-toolbar-gender-fallback {
+    color: var(--primary);
+}
 .hero-toolbar-menu-item:hover {
     background: rgba(255, 255, 255, 0.05);
     color: var(--text);

@@ -20,7 +20,10 @@ import {
 import { useMounted } from "@/hooks/use-mounted";
 import { AnimatePresence, motion } from "framer-motion";
 import {
+  clampAgeInRange,
   clampDistance,
+  distanceDisplayLabel,
+  normalizeAgeRangeInBounds,
 } from "@/features/video/lib/pref-bounds";
 import {
   fetchVideoMatchRestrictions,
@@ -38,7 +41,24 @@ import { genderIconClass } from "@/lib/gender-options";
 import type { VideoGenderFilterOption } from "@/features/video/api/match-restrictions-api";
 
 function GenderFilterIcon({ option }: { option: VideoGenderFilterOption }) {
-  return <i className={genderIconClass(option.title)} aria-hidden />;
+  if (option.url) {
+    return (
+      <img
+        src={option.url}
+        alt=""
+        className="hero-toolbar-gender-icon"
+        width={16}
+        height={16}
+      />
+    );
+  }
+
+  return (
+    <i
+      className={`${genderIconClass(option.title)} hero-toolbar-gender-fallback`}
+      aria-hidden
+    />
+  );
 }
 
 function formatTimer(seconds: number) {
@@ -122,7 +142,11 @@ export function VideoHero() {
   const [gender, setGender] = useState("Everyone");
   const [genderMenuOpen, setGenderMenuOpen] = useState(false);
   const [prefOpen, setPrefOpen] = useState(false);
-  const [maxDistance, setMaxDistance] = useState(50);
+  const [minAge, setMinAge] = useState(VIDEO_MATCH_DEFAULT_RESTRICTIONS.ageMin);
+  const [maxAge, setMaxAge] = useState(VIDEO_MATCH_DEFAULT_RESTRICTIONS.ageMax);
+  const [maxDistance, setMaxDistance] = useState(
+    VIDEO_MATCH_DEFAULT_RESTRICTIONS.distanceMax,
+  );
   const [restrictions, setRestrictions] = useState<VideoMatchRestrictions>(
     VIDEO_MATCH_DEFAULT_RESTRICTIONS,
   );
@@ -130,6 +154,8 @@ export function VideoHero() {
 
   const distanceMin = restrictions.distanceMin;
   const distanceMax = restrictions.distanceMax;
+  const ageMin = restrictions.ageMin;
+  const ageMax = restrictions.ageMax;
   const genderOptions = useMemo(
     () => videoGenderFilterOptions(restrictions),
     [restrictions],
@@ -145,12 +171,28 @@ export function VideoHero() {
     [distanceMin, distanceMax],
   );
 
+  const setMinAgeBounded = useCallback(
+    (value: number) => {
+      setMinAge(clampAgeInRange(value, ageMin, ageMax));
+    },
+    [ageMin, ageMax],
+  );
+
+  const setMaxAgeBounded = useCallback(
+    (value: number) => {
+      setMaxAge(clampAgeInRange(value, ageMin, ageMax));
+    },
+    [ageMin, ageMax],
+  );
+
   useEffect(() => {
     let cancelled = false;
 
     void fetchVideoMatchRestrictions().then((data) => {
       if (cancelled) return;
       setRestrictions(data);
+      setMinAge((prev) => clampAgeInRange(prev, data.ageMin, data.ageMax));
+      setMaxAge((prev) => clampAgeInRange(prev, data.ageMin, data.ageMax));
       setMaxDistance((prev) =>
         clampDistance(prev, data.distanceMin, data.distanceMax),
       );
@@ -180,9 +222,12 @@ export function VideoHero() {
 
   useEffect(() => {
     if (!prefOpen) return;
+    const ages = normalizeAgeRangeInBounds(minAge, maxAge, ageMin, ageMax);
+    if (ages.minAge !== minAge) setMinAge(ages.minAge);
+    if (ages.maxAge !== maxAge) setMaxAge(ages.maxAge);
     const distance = clampDistance(maxDistance, distanceMin, distanceMax);
     if (distance !== maxDistance) setMaxDistance(distance);
-  }, [prefOpen, maxDistance, distanceMin, distanceMax]);
+  }, [prefOpen, minAge, maxAge, maxDistance, ageMin, ageMax, distanceMin, distanceMax]);
   const [isMuted, setIsMuted] = useState(false);
   const genderMenuRef = useRef<HTMLDivElement>(null);
   const mounted = useMounted();
@@ -246,12 +291,12 @@ export function VideoHero() {
   const buildFilter = useCallback(
     () => ({
       gender,
-      minAge: restrictions?.ageMin ?? 18,
-      maxAge: restrictions?.ageMax ?? 60,
+      minAge,
+      maxAge,
       minDistance: restrictions?.distanceMin ?? 1,
       maxDistance,
     }),
-    [gender, maxDistance, restrictions],
+    [gender, minAge, maxAge, maxDistance, restrictions],
   );
 
   useEffect(() => {
@@ -454,7 +499,8 @@ export function VideoHero() {
                         </span>
                       ) : null}
                       <span>
-                        Press Start to find people within {maxDistance} km
+                        Press Start to find people within{" "}
+                        {distanceDisplayLabel(maxDistance, distanceMax)}
                       </span>
                       {genderOnlineLabel ? (
                         <span className="hero-panel-idle-online">
@@ -735,7 +781,7 @@ export function VideoHero() {
                     onClick={() => setPrefOpen(true)}
                   >
                     <i className="ri-equalizer-line" aria-hidden />
-                    <span>{maxDistance} km</span>
+                    <span>{distanceDisplayLabel(maxDistance, distanceMax)}</span>
                   </button>
 
                   <button
@@ -756,11 +802,17 @@ export function VideoHero() {
 
       <PreferenceModal
         open={prefOpen}
+        minAge={minAge}
+        maxAge={maxAge}
         maxDistance={maxDistance}
+        ageMin={ageMin}
+        ageMax={ageMax}
         distanceMin={distanceMin}
         distanceMax={distanceMax}
         onClose={() => setPrefOpen(false)}
         onDone={() => setPrefOpen(false)}
+        onMinAgeChange={setMinAgeBounded}
+        onMaxAgeChange={setMaxAgeBounded}
         onMaxDistanceChange={setMaxDistanceBounded}
       />
 

@@ -37,8 +37,41 @@ export function normalizeAgeRange(
   return { minAge: min, maxAge: max };
 }
 
-export function ageTrackPercent(age: number): number {
-  const clamped = clampAge(age);
-  const span = PREF_AGE_MAX - PREF_AGE_MIN;
-  return ((clamped - PREF_AGE_MIN) / span) * 100;
+export function clampAgeInRange(
+  value: number,
+  min: number,
+  max: number,
+): number {
+  const safeMin = Math.max(1, Math.round(min));
+  const safeMax = Math.max(safeMin, Math.round(max));
+  if (!Number.isFinite(value)) return safeMin;
+  return Math.min(safeMax, Math.max(safeMin, Math.round(value)));
+}
+
+export function normalizeAgeRangeInBounds(
+  minAge: number,
+  maxAge: number,
+  boundMin: number,
+  boundMax: number,
+): { minAge: number; maxAge: number } {
+  const min = clampAgeInRange(minAge, boundMin, boundMax);
+  const max = clampAgeInRange(maxAge, boundMin, boundMax);
+  if (min > max) return { minAge: max, maxAge: min };
+  return { minAge: min, maxAge: max };
+}
+
+export function ageTrackPercentInRange(
+  age: number,
+  boundMin: number,
+  boundMax: number,
+): number {
+  const clamped = clampAgeInRange(age, boundMin, boundMax);
+  const span = boundMax - boundMin;
+  if (span <= 0) return 0;
+  return ((clamped - boundMin) / span) * 100;
+}
+
+export function distanceDisplayLabel(km: number, distanceMax: number): string {
+  if (km >= distanceMax) return `${distanceMax}+ km`;
+  return `${km} km`;
 }

@@ -3,7 +3,6 @@ import { apiClient } from "@/lib/api-client";
 import {
   DEFAULT_PROFILE_GENDERS,
 } from "@/lib/gender-options";
-import { PREF_DISTANCE_MAX } from "@/features/video/lib/pref-bounds";
 
 export type VideoMatchRestrictions = {
   genders: { title: string; url: string }[];
@@ -16,9 +15,9 @@ export type VideoMatchRestrictions = {
 const DEFAULT_RESTRICTIONS: VideoMatchRestrictions = {
   genders: [...DEFAULT_PROFILE_GENDERS],
   ageMin: 18,
-  ageMax: 70,
+  ageMax: 60,
   distanceMin: 1,
-  distanceMax: PREF_DISTANCE_MAX,
+  distanceMax: 100,
 };
 
 export { DEFAULT_RESTRICTIONS as VIDEO_MATCH_DEFAULT_RESTRICTIONS };
