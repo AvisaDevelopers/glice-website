@@ -32,6 +32,7 @@ import { PreferenceModal } from "./preference-modal";
 
 import {
   GENDER_FILTER_OPTIONS,
+  genderIconClass,
   type GenderFilterOption,
 } from "@/lib/gender-options";
 
@@ -674,7 +675,7 @@ export function VideoHero() {
                       disabled={isBusy}
                       onClick={() => setGenderMenuOpen((open) => !open)}
                     >
-                      <i className="ri-user-line" aria-hidden />
+                      <i className={genderIconClass(gender)} aria-hidden />
                       <span>{gender}</span>
                       <i className="ri-arrow-down-s-line" aria-hidden />
                     </button>
@@ -692,7 +693,8 @@ export function VideoHero() {
                               setGenderMenuOpen(false);
                             }}
                           >
-                            {option}
+                            <i className={genderIconClass(option)} aria-hidden />
+                            <span>{option}</span>
                           </button>
                         ))}
                       </div>

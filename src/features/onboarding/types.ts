@@ -42,7 +42,6 @@ export const ONBOARDING_STEPS = [
   "height",
   "photo",
   "interests",
-  "preference",
 ] as const;
 
 export type OnboardingStep = (typeof ONBOARDING_STEPS)[number];

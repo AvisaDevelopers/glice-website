@@ -55,11 +55,16 @@ export function lobbyGenderKey(gender: GenderFilterOption): string {
 
 export function genderIconClass(titleOrKey: string): string {
   switch (normalizeGenderKey(titleOrKey)) {
+    case "everyone":
+    case "any":
+      return "ri-group-line";
     case "female":
       return "ri-women-line";
+    case "male":
+      return "ri-men-line";
     case "other":
       return "ri-genderless-line";
     default:
-      return "ri-men-line";
+      return "ri-user-line";
   }
 }

@@ -23,6 +23,7 @@ import {
 import { useUiSession } from "@/components/site/ui-session-provider";
 import { getUser } from "@/features/auth/api/auth-api";
 import { useSocketStore } from "@/features/chat/stores/socket-store";
+import { useVideoSessionLocked } from "@/features/video/hooks/use-video-session-locked";
 import {
   Check,
   Copy,
@@ -43,6 +44,7 @@ function isSocketOnline(phase: string): boolean {
 export function HomeProfileMenu() {
   const router = useRouter();
   const { user, userName, logout, applySessionUser } = useUiSession();
+  const sessionLocked = useVideoSessionLocked();
   const socketPhase = useSocketStore((s) => s.phase);
   const isOnline = isSocketOnline(socketPhase);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -216,22 +218,55 @@ export function HomeProfileMenu() {
           <DropdownMenuSeparator className="home-profile-separator" />
 
           <div className="home-profile-nav">
-            <DropdownMenuItem asChild className="home-profile-item">
-              <Link href="/messages">
+            <DropdownMenuItem
+              asChild
+              className="home-profile-item"
+              disabled={sessionLocked}
+            >
+              <Link
+                href="/messages"
+                onClick={(event) => {
+                  if (sessionLocked) event.preventDefault();
+                }}
+                aria-disabled={sessionLocked}
+                tabIndex={sessionLocked ? -1 : undefined}
+              >
                 <MessageSquare className="h-4 w-4" />
                 Messages
               </Link>
             </DropdownMenuItem>
 
-            <DropdownMenuItem asChild className="home-profile-item">
-              <Link href="/features">
+            <DropdownMenuItem
+              asChild
+              className="home-profile-item"
+              disabled={sessionLocked}
+            >
+              <Link
+                href="/features"
+                onClick={(event) => {
+                  if (sessionLocked) event.preventDefault();
+                }}
+                aria-disabled={sessionLocked}
+                tabIndex={sessionLocked ? -1 : undefined}
+              >
                 <Sparkles className="h-4 w-4" />
                 Features
               </Link>
             </DropdownMenuItem>
 
-            <DropdownMenuItem asChild className="home-profile-item">
-              <Link href="/contact">
+            <DropdownMenuItem
+              asChild
+              className="home-profile-item"
+              disabled={sessionLocked}
+            >
+              <Link
+                href="/contact"
+                onClick={(event) => {
+                  if (sessionLocked) event.preventDefault();
+                }}
+                aria-disabled={sessionLocked}
+                tabIndex={sessionLocked ? -1 : undefined}
+              >
                 <Headphones className="h-4 w-4" />
                 Contact us
               </Link>

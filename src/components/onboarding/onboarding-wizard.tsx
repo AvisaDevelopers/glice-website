@@ -15,22 +15,17 @@ import {
 } from "@/lib/gender-options";
 import {
   HOME_TAB_LIVE_VIDEO,
-  HOME_TAB_SWIPE,
   ONBOARDING_STEPS,
-  type HomeTabPreference,
   type OnboardingDraft,
   type OnboardingRestrictions,
   type OnboardingStep,
 } from "@/features/onboarding/types";
-import {
-  OnboardingDiscoverDownload,
-  OnboardingPreferenceStep,
-} from "@/components/onboarding/onboarding-preference-step";
+import { HeightWheelPicker } from "@/components/onboarding/height-wheel-picker";
 import { getUser } from "@/features/auth/api/auth-api";
 import { getErrorMessage } from "@/features/auth/lib/get-error-message";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 const STEP_LABELS: Record<OnboardingStep, string> = {
   profile: "About you",
@@ -39,19 +34,7 @@ const STEP_LABELS: Record<OnboardingStep, string> = {
   height: "Your height",
   photo: "Profile photo",
   interests: "Your interests",
-  preference: "Where to start",
 };
-
-function cmToFeetInches(cm: number) {
-  const totalInches = Math.round(cm / 2.54);
-  const feet = Math.floor(totalInches / 12);
-  const inches = totalInches % 12;
-  return { feet, inches };
-}
-
-function feetInchesToCm(feet: number, inches: number) {
-  return Math.round((feet * 12 + inches) * 2.54);
-}
 
 export function OnboardingWizard() {
   const router = useRouter();
@@ -67,21 +50,17 @@ export function OnboardingWizard() {
   const [loadingData, setLoadingData] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [homeTab, setHomeTab] = useState<HomeTabPreference | null>(null);
-  const [revealPhase, setRevealPhase] = useState<"idle" | "active" | "done">(
-    "idle",
-  );
-  const [showDiscoverDownload, setShowDiscoverDownload] = useState(false);
+  const [stepConfirmed, setStepConfirmed] = useState({
+    gender: false,
+    age: false,
+    height: false,
+    heightUnit: false,
+  });
 
   const step = ONBOARDING_STEPS[stepIndex];
-  const isPreferenceStep = step === "preference";
-  const progressTotal = ONBOARDING_STEPS.length - 1;
-  const progressCurrent = Math.min(stepIndex + 1, progressTotal);
-
-  const { feet, inches } = useMemo(
-    () => cmToFeetInches(draft.heightCm),
-    [draft.heightCm],
-  );
+  const isLastStep = stepIndex === ONBOARDING_STEPS.length - 1;
+  const progressTotal = ONBOARDING_STEPS.length;
+  const progressCurrent = stepIndex + 1;
 
   useEffect(() => {
     let cancelled = false;
@@ -149,23 +128,25 @@ export function OnboardingWizard() {
         if (draft.name.trim().length > 30) return "Name must be 30 characters or less";
         return null;
       case "gender":
-        if (!draft.gender) return "Choose your gender";
+        if (!draft.gender || !stepConfirmed.gender) {
+          return "Choose your gender";
+        }
         return null;
       case "age":
-        if (!restrictions) return null;
+        if (!restrictions) return "Please wait…";
+        if (!stepConfirmed.age) return "Select your age";
         if (draft.age < restrictions.ageMin || draft.age > restrictions.ageMax) {
           return `Age must be between ${restrictions.ageMin} and ${restrictions.ageMax}`;
         }
         return null;
       case "height":
+        if (!stepConfirmed.heightUnit) return "Choose cm or ft / in";
+        if (!stepConfirmed.height) return "Select your height";
         if (draft.heightCm < 120 || draft.heightCm > 230) {
           return "Enter a valid height";
         }
         return null;
       case "photo":
-        if (!draft.profileFile && !draft.profilePreview) {
-          return "Add a profile photo to continue";
-        }
         return null;
       case "interests": {
         const selected = draft.interests.filter((item) => item.isSelected).length;
@@ -174,13 +155,10 @@ export function OnboardingWizard() {
         if (selected > max) return `Select up to ${max} interests`;
         return null;
       }
-      case "preference":
-        if (homeTab === null) return "Choose where you want to start";
-        return null;
       default:
         return null;
     }
-  }, [draft, homeTab, restrictions, step]);
+  }, [draft, restrictions, step, stepConfirmed]);
 
   const handleContinue = () => {
     const validationError = validateStep();
@@ -188,7 +166,7 @@ export function OnboardingWizard() {
       setError(validationError);
       return;
     }
-    if (isPreferenceStep) {
+    if (isLastStep) {
       void handleFinish();
       return;
     }
@@ -196,16 +174,11 @@ export function OnboardingWizard() {
   };
 
   const handleFinish = async () => {
-    if (homeTab === null || !user?.email) return;
-
-    const isDiscover = homeTab === HOME_TAB_SWIPE;
+    if (!user?.email) return;
 
     setSubmitting(true);
     setError(null);
-    setHomeTabPreference(homeTab);
-    if (!isDiscover) {
-      setRevealPhase("active");
-    }
+    setHomeTabPreference(HOME_TAB_LIVE_VIDEO);
 
     try {
       let userId = user._id;
@@ -223,19 +196,8 @@ export function OnboardingWizard() {
       });
 
       applySessionUser(updatedUser);
-
-      if (isDiscover) {
-        setSubmitting(false);
-        setShowDiscoverDownload(true);
-        return;
-      }
-
-      window.setTimeout(() => {
-        setRevealPhase("done");
-        router.replace("/");
-      }, 900);
+      router.replace("/");
     } catch (err) {
-      setRevealPhase("idle");
       setSubmitting(false);
       setError(getErrorMessage(err, "Could not save your profile"));
     }
@@ -300,66 +262,8 @@ export function OnboardingWizard() {
     );
   }
 
-  if (isPreferenceStep) {
-    return (
-      <>
-        {revealPhase !== "idle" && (
-          <div
-            className={`onboarding-reveal onboarding-reveal--${revealPhase}`}
-            aria-hidden
-          >
-            <div className="onboarding-reveal-inner">
-              <p className="onboarding-reveal-eyebrow">Going Live</p>
-              <p className="onboarding-reveal-title">
-                Warming up your video room…
-              </p>
-            </div>
-          </div>
-        )}
-
-        <OnboardingPreferenceStep
-          homeTab={homeTab}
-          onSelect={setHomeTab}
-          onBack={goBack}
-          onContinue={handleContinue}
-          submitting={submitting}
-          disabled={showDiscoverDownload}
-        />
-
-        {error && (
-          <p className="pref-step-error" role="alert">
-            {error}
-          </p>
-        )}
-
-        {showDiscoverDownload && (
-          <OnboardingDiscoverDownload
-            onUseWeb={() => {
-              setHomeTabPreference(HOME_TAB_LIVE_VIDEO);
-              router.replace("/");
-            }}
-          />
-        )}
-      </>
-    );
-  }
-
   return (
     <div className="onboarding-shell">
-      {revealPhase !== "idle" && (
-        <div
-          className={`onboarding-reveal onboarding-reveal--${revealPhase}`}
-          aria-hidden
-        >
-          <div className="onboarding-reveal-inner">
-            <p className="onboarding-reveal-eyebrow">Going Live</p>
-            <p className="onboarding-reveal-title">
-              Warming up your video room…
-            </p>
-          </div>
-        </div>
-      )}
-
       <div className="onboarding-card">
         <header className="onboarding-header">
             <button
@@ -426,7 +330,11 @@ export function OnboardingWizard() {
                       key={gender.title}
                       type="button"
                       className={`onboarding-gender-card${active ? " is-active" : ""}`}
-                      onClick={() => patchDraft({ gender: key })}
+                      onClick={() => {
+                        patchDraft({ gender: key });
+                        setStepConfirmed((prev) => ({ ...prev, gender: true }));
+                        setError(null);
+                      }}
                     >
                       {gender.url ? (
                         <Image
@@ -457,11 +365,13 @@ export function OnboardingWizard() {
                 <button
                   type="button"
                   className="onboarding-stepper-btn"
-                  onClick={() =>
+                  onClick={() => {
                     patchDraft({
                       age: Math.max(restrictions.ageMin, draft.age - 1),
-                    })
-                  }
+                    });
+                    setStepConfirmed((prev) => ({ ...prev, age: true }));
+                    setError(null);
+                  }}
                   aria-label="Decrease age"
                 >
                   <i className="ri-subtract-line" aria-hidden />
@@ -470,11 +380,13 @@ export function OnboardingWizard() {
                 <button
                   type="button"
                   className="onboarding-stepper-btn"
-                  onClick={() =>
+                  onClick={() => {
                     patchDraft({
                       age: Math.min(restrictions.ageMax, draft.age + 1),
-                    })
-                  }
+                    });
+                    setStepConfirmed((prev) => ({ ...prev, age: true }));
+                    setError(null);
+                  }}
                   aria-label="Increase age"
                 >
                   <i className="ri-add-line" aria-hidden />
@@ -484,76 +396,24 @@ export function OnboardingWizard() {
           )}
 
           {step === "height" && (
-            <>
-              <p className="onboarding-desc">Used for better match suggestions.</p>
-              <div className="onboarding-unit-toggle" role="tablist">
-                <button
-                  type="button"
-                  role="tab"
-                  aria-selected={!draft.isHeightFeet}
-                  className={!draft.isHeightFeet ? "is-active" : ""}
-                  onClick={() => patchDraft({ isHeightFeet: false })}
-                >
-                  cm
-                </button>
-                <button
-                  type="button"
-                  role="tab"
-                  aria-selected={draft.isHeightFeet}
-                  className={draft.isHeightFeet ? "is-active" : ""}
-                  onClick={() => patchDraft({ isHeightFeet: true })}
-                >
-                  ft / in
-                </button>
-              </div>
-              {!draft.isHeightFeet ? (
-                <label className="onboarding-field onboarding-field--center">
-                  <input
-                    type="number"
-                    min={120}
-                    max={230}
-                    value={draft.heightCm}
-                    onChange={(e) =>
-                      patchDraft({ heightCm: Number(e.target.value) || 0 })
-                    }
-                  />
-                  <span>cm</span>
-                </label>
-              ) : (
-                <div className="onboarding-height-ft">
-                  <label className="onboarding-field onboarding-field--center">
-                    <input
-                      type="number"
-                      min={3}
-                      max={7}
-                      value={feet}
-                      onChange={(e) => {
-                        const nextFeet = Number(e.target.value) || 0;
-                        patchDraft({
-                          heightCm: feetInchesToCm(nextFeet, inches),
-                        });
-                      }}
-                    />
-                    <span>ft</span>
-                  </label>
-                  <label className="onboarding-field onboarding-field--center">
-                    <input
-                      type="number"
-                      min={0}
-                      max={11}
-                      value={inches}
-                      onChange={(e) => {
-                        const nextInches = Number(e.target.value) || 0;
-                        patchDraft({
-                          heightCm: feetInchesToCm(feet, nextInches),
-                        });
-                      }}
-                    />
-                    <span>in</span>
-                  </label>
-                </div>
-              )}
-            </>
+            <HeightWheelPicker
+              heightCm={draft.heightCm}
+              isHeightFeet={draft.isHeightFeet}
+              onHeightCmChange={(heightCm) => patchDraft({ heightCm })}
+              onUnitChange={(isHeightFeet) => {
+                patchDraft({ isHeightFeet });
+                setStepConfirmed((prev) => ({
+                  ...prev,
+                  heightUnit: true,
+                  height: false,
+                }));
+                setError(null);
+              }}
+              onUserInteract={() => {
+                setStepConfirmed((prev) => ({ ...prev, height: true }));
+                setError(null);
+              }}
+            />
           )}
 
           {step === "photo" && (
@@ -608,19 +468,6 @@ export function OnboardingWizard() {
                     className={`onboarding-interest-chip${interest.isSelected ? " is-active" : ""}`}
                     onClick={() => toggleInterest(interest.title)}
                   >
-                    {interest.iconUrl ? (
-                      <Image
-                        src={
-                          interest.isSelected
-                            ? interest.activeIconUrl || interest.iconUrl
-                            : interest.iconUrl
-                        }
-                        alt=""
-                        width={20}
-                        height={20}
-                        unoptimized
-                      />
-                    ) : null}
                     <span>{interest.title}</span>
                   </button>
                 ))}
@@ -647,6 +494,8 @@ export function OnboardingWizard() {
                 <span className="onboarding-spinner onboarding-spinner--dark" aria-hidden />
                 Saving…
               </>
+            ) : isLastStep ? (
+              "Finish"
             ) : (
               "Next"
             )}

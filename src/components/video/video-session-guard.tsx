@@ -1,17 +1,19 @@
 "use client";
 
+import {
+  VIDEO_SESSION_HOME_ROUTE,
+  isVideoSessionActive,
+} from "@/features/video/lib/video-session-lock";
 import { useVideoCallStore } from "@/features/video/stores/video-call-store";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
-
-const ACTIVE_STAGES = new Set(["searching", "connecting", "connected", "feedback"]);
 
 /** Locks page scroll and in-app navigation while a video session is active. */
 export function VideoSessionGuard() {
   const stage = useVideoCallStore((s) => s.stage);
   const pathname = usePathname();
   const router = useRouter();
-  const locked = ACTIVE_STAGES.has(stage);
+  const locked = isVideoSessionActive(stage);
 
   useEffect(() => {
     document.body.classList.toggle("video-session-locked", locked);
@@ -56,11 +58,16 @@ export function VideoSessionGuard() {
     if (!locked) return;
 
     const onPopState = () => {
-      router.replace(pathname);
+      router.replace(VIDEO_SESSION_HOME_ROUTE);
     };
 
     window.addEventListener("popstate", onPopState);
     return () => window.removeEventListener("popstate", onPopState);
+  }, [locked, router]);
+
+  useEffect(() => {
+    if (!locked || pathname === VIDEO_SESSION_HOME_ROUTE) return;
+    router.replace(VIDEO_SESSION_HOME_ROUTE);
   }, [locked, pathname, router]);
 
   return null;

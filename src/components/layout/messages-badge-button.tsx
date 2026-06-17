@@ -5,6 +5,7 @@ import {
   useTotalUnreadMessages,
 } from "@/features/chat/hooks/use-total-unread";
 import { useUiSession } from "@/components/site/ui-session-provider";
+import { useVideoSessionLocked } from "@/features/video/hooks/use-video-session-locked";
 import { MessageSquare } from "lucide-react";
 import { useRouter } from "next/navigation";
 
@@ -21,10 +22,12 @@ export function MessagesBadgeButton({
 }: MessagesBadgeButtonProps) {
   const router = useRouter();
   const { isLoggedIn, openAuth } = useUiSession();
+  const sessionLocked = useVideoSessionLocked();
   const unread = useTotalUnreadMessages();
   const badge = formatUnreadBadge(unread);
 
   const openMessages = () => {
+    if (sessionLocked) return;
     if (isLoggedIn) {
       router.push("/messages");
       return;
@@ -38,9 +41,11 @@ export function MessagesBadgeButton({
         type="button"
         className={`topbar-messages-icon-btn ${className}`.trim()}
         onClick={openMessages}
+        disabled={sessionLocked}
         aria-label={
           unread > 0 ? `Messages, ${unread} unread` : "Messages"
         }
+        title={sessionLocked ? "Finish your video call first" : undefined}
       >
         <MessageSquare className="h-5 w-5" aria-hidden />
         {badge && (
@@ -57,7 +62,9 @@ export function MessagesBadgeButton({
       type="button"
       className={`topbar-btn topbar-btn--messages ${className}`.trim()}
       onClick={openMessages}
+      disabled={sessionLocked}
       aria-label={unread > 0 ? `Messages, ${unread} unread` : "Messages"}
+      title={sessionLocked ? "Finish your video call first" : undefined}
     >
       <span className="topbar-messages-icon-wrap">
         <i className="ri-message-3-line" aria-hidden="true" />
