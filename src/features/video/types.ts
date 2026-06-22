@@ -56,8 +56,8 @@ export type VideoFilterInput = {
   gender: string;
   minAge: number;
   maxAge: number;
-  minDistance: number;
-  maxDistance: number;
+  /** Country codes/names to match with; `global` = match anyone. */
+  countries: string[];
 };
 
 export type RandomCallFilter = "all" | "random" | "spark";

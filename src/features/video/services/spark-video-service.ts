@@ -13,7 +13,6 @@ import {
   resolveCallLimitSeconds,
 } from "../api/video-config-api";
 import { ensureLocalStream } from "../lib/ensure-local-stream";
-import { resolveDiscoverLocation } from "../lib/discover-location";
 import { buildDiscoverFilter } from "../lib/filter-payload";
 import { readProfileStatus } from "@/lib/verification-status";
 import { parsePeerFoundPayload, videoPartnerFromPeerFound } from "../lib/parse-peer-found";
@@ -57,9 +56,6 @@ class SparkVideoService {
   private currentFilter: VideoFilterInput | null = null;
   private firstSessionUpdated = false;
   private listenersBound = false;
-  private discoverLocation: Awaited<
-    ReturnType<typeof resolveDiscoverLocation>
-  > = null;
   private preparePromise: Promise<boolean> | null = null;
   private feedbackPartner: VideoPartner | null = null;
   private feedbackContinueAfter = false;
@@ -73,6 +69,21 @@ class SparkVideoService {
   private pendingSessionEndTimer: ReturnType<typeof setTimeout> | null = null;
   /** Suppress onRemoteDisconnected while we intentionally close the peer. */
   private intentionalTeardown = false;
+
+  private readonly onSocketPeerError = (raw: unknown) => {
+    const code = typeof raw === "string" ? raw : "match_failed";
+    const store = useVideoCallStore.getState();
+    if (store.stage !== "searching" && store.stage !== "connecting") return;
+
+    const message =
+      code === "user_not_found"
+        ? "Account not found. Please sign in again."
+        : "Could not find a match right now. Try again.";
+
+    store.setError(message);
+    store.setStage("idle");
+    this.stopTimers();
+  };
 
   private readonly onSocketPeerFound = (raw: unknown) => {
     const data = parsePeerFoundPayload(raw);
@@ -362,9 +373,6 @@ class SparkVideoService {
 
     this.currentFilter = filter;
     latest.setError(null);
-
-    this.discoverLocation = await resolveDiscoverLocation(this.user);
-    if (generation !== this.searchGeneration) return;
 
     const stream = await ensureLocalStream(
       () => this.handlers?.getLocalStream() ?? null,
@@ -768,6 +776,7 @@ class SparkVideoService {
     if (this.listenersBound) return;
 
     chatSocket.onEvent("peer_found", this.onSocketPeerFound);
+    chatSocket.onEvent("peer_error", this.onSocketPeerError);
     chatSocket.onEvent("hangUp", this.onSocketHangUp);
     chatSocket.onEvent("matched", this.onSocketMatched);
     chatSocket.onEvent("new_message_temp", this.onSocketNewMessageTemp);
@@ -780,6 +789,7 @@ class SparkVideoService {
     if (!this.listenersBound) return;
 
     chatSocket.offEvent("peer_found", this.onSocketPeerFound);
+    chatSocket.offEvent("peer_error", this.onSocketPeerError);
     chatSocket.offEvent("hangUp", this.onSocketHangUp);
     chatSocket.offEvent("matched", this.onSocketMatched);
     chatSocket.offEvent("new_message_temp", this.onSocketNewMessageTemp);
@@ -792,12 +802,7 @@ class SparkVideoService {
     if (!this.user || !this.currentFilter) return;
     if (!chatSocket.isConnected()) return;
 
-    const config = useVideoCallStore.getState().config;
-    const filter = buildDiscoverFilter(
-      this.currentFilter,
-      config?.distanceMaxThreshold ?? 100,
-      this.discoverLocation,
-    );
+    const filter = buildDiscoverFilter(this.currentFilter);
 
     chatSocket.emitEvent("discover", {
       filter,
@@ -829,15 +834,10 @@ class SparkVideoService {
   private emitHangUp() {
     if (!this.user || !this.currentFilter) return;
     const store = useVideoCallStore.getState();
-    const config = store.config;
-    const filter = buildDiscoverFilter(
-      this.currentFilter,
-      config?.distanceMaxThreshold ?? 100,
-      this.discoverLocation,
-    );
+    const filter = buildDiscoverFilter(this.currentFilter);
 
     chatSocket.emitEvent("hang_up", {
-      "filter ": filter,
+      filter,
       name: SPARK_DATING_EVENT_NAME,
       roomId: store.roomId ?? this.user._id,
       userId: this.user._id,

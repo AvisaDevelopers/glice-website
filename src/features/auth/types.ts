@@ -35,6 +35,7 @@ export type GliceUser = {
   profileUrl?: string;
   age?: number;
   gender?: string | number;
+  country?: string;
   phone?: UserPhone;
   ipAddress?: string;
   referralCode?: string;

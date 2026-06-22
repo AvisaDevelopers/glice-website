@@ -21,10 +21,15 @@ import { useMounted } from "@/hooks/use-mounted";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   clampAgeInRange,
-  clampDistance,
-  distanceDisplayLabel,
   normalizeAgeRangeInBounds,
 } from "@/features/video/lib/pref-bounds";
+import {
+  countryFilterLabel,
+  GLOBAL_COUNTRY_VALUE,
+  normalizeCountryFilter,
+  searchScopeMessage,
+} from "@/features/video/lib/country-options";
+import { userCountryLabel } from "@/features/video/lib/user-country";
 import {
   fetchVideoMatchRestrictions,
   videoGenderFilterOptions,
@@ -144,18 +149,17 @@ export function VideoHero() {
   const [prefOpen, setPrefOpen] = useState(false);
   const [minAge, setMinAge] = useState(VIDEO_MATCH_DEFAULT_RESTRICTIONS.ageMin);
   const [maxAge, setMaxAge] = useState(VIDEO_MATCH_DEFAULT_RESTRICTIONS.ageMax);
-  const [maxDistance, setMaxDistance] = useState(
-    VIDEO_MATCH_DEFAULT_RESTRICTIONS.distanceMax,
-  );
+  const [countries, setCountries] = useState<string[]>([GLOBAL_COUNTRY_VALUE]);
   const [restrictions, setRestrictions] = useState<VideoMatchRestrictions>(
     VIDEO_MATCH_DEFAULT_RESTRICTIONS,
   );
   const [reportOpen, setReportOpen] = useState(false);
 
-  const distanceMin = restrictions.distanceMin;
-  const distanceMax = restrictions.distanceMax;
   const ageMin = restrictions.ageMin;
   const ageMax = restrictions.ageMax;
+  const countryScopeLabel = countryFilterLabel(countries);
+  const searchScope = searchScopeMessage(countries);
+  const ownCountryLabel = userCountryLabel(user);
   const genderOptions = useMemo(
     () => videoGenderFilterOptions(restrictions),
     [restrictions],
@@ -164,12 +168,9 @@ export function VideoHero() {
     genderOptions.find((option) => option.title === gender) ??
     genderOptions[0];
 
-  const setMaxDistanceBounded = useCallback(
-    (value: number) => {
-      setMaxDistance(clampDistance(value, distanceMin, distanceMax));
-    },
-    [distanceMin, distanceMax],
-  );
+  const setCountriesBounded = useCallback((value: string[]) => {
+    setCountries(normalizeCountryFilter(value));
+  }, []);
 
   const setMinAgeBounded = useCallback(
     (value: number) => {
@@ -193,9 +194,6 @@ export function VideoHero() {
       setRestrictions(data);
       setMinAge((prev) => clampAgeInRange(prev, data.ageMin, data.ageMax));
       setMaxAge((prev) => clampAgeInRange(prev, data.ageMin, data.ageMax));
-      setMaxDistance((prev) =>
-        clampDistance(prev, data.distanceMin, data.distanceMax),
-      );
     });
 
     return () => {
@@ -225,9 +223,7 @@ export function VideoHero() {
     const ages = normalizeAgeRangeInBounds(minAge, maxAge, ageMin, ageMax);
     if (ages.minAge !== minAge) setMinAge(ages.minAge);
     if (ages.maxAge !== maxAge) setMaxAge(ages.maxAge);
-    const distance = clampDistance(maxDistance, distanceMin, distanceMax);
-    if (distance !== maxDistance) setMaxDistance(distance);
-  }, [prefOpen, minAge, maxAge, maxDistance, ageMin, ageMax, distanceMin, distanceMax]);
+  }, [prefOpen, minAge, maxAge, ageMin, ageMax]);
   const [isMuted, setIsMuted] = useState(false);
   const genderMenuRef = useRef<HTMLDivElement>(null);
   const mounted = useMounted();
@@ -293,10 +289,9 @@ export function VideoHero() {
       gender,
       minAge,
       maxAge,
-      minDistance: restrictions?.distanceMin ?? 1,
-      maxDistance,
+      countries,
     }),
-    [gender, minAge, maxAge, maxDistance, restrictions],
+    [gender, minAge, maxAge, countries],
   );
 
   useEffect(() => {
@@ -499,8 +494,7 @@ export function VideoHero() {
                         </span>
                       ) : null}
                       <span>
-                        Press Start to find people within{" "}
-                        {distanceDisplayLabel(maxDistance, distanceMax)}
+                        Press Start to find people — {searchScope}
                       </span>
                       {genderOnlineLabel ? (
                         <span className="hero-panel-idle-online">
@@ -531,7 +525,7 @@ export function VideoHero() {
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                       >
-                        <NearbySearchMotion radiusKm={maxDistance} />
+                        <NearbySearchMotion scopeLabel={countryScopeLabel} />
                         <button
                           type="button"
                           className="vc-cancel-search"
@@ -780,8 +774,8 @@ export function VideoHero() {
                     disabled={isBusy}
                     onClick={() => setPrefOpen(true)}
                   >
-                    <i className="ri-equalizer-line" aria-hidden />
-                    <span>{distanceDisplayLabel(maxDistance, distanceMax)}</span>
+                    <i className="ri-earth-line" aria-hidden />
+                    <span>{countryScopeLabel}</span>
                   </button>
 
                   <button
@@ -804,16 +798,15 @@ export function VideoHero() {
         open={prefOpen}
         minAge={minAge}
         maxAge={maxAge}
-        maxDistance={maxDistance}
+        countries={countries}
+        ownCountryLabel={ownCountryLabel}
         ageMin={ageMin}
         ageMax={ageMax}
-        distanceMin={distanceMin}
-        distanceMax={distanceMax}
         onClose={() => setPrefOpen(false)}
         onDone={() => setPrefOpen(false)}
         onMinAgeChange={setMinAgeBounded}
         onMaxAgeChange={setMaxAgeBounded}
-        onMaxDistanceChange={setMaxDistanceBounded}
+        onCountriesChange={setCountriesBounded}
       />
 
       {partner && roomId && (

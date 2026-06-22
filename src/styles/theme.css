@@ -4456,6 +4456,73 @@ body:not(.is-logged-in) .hero-user-ui { display: none; }
 .pref-modal-section-meta--accent {
     color: var(--primary);
 }
+.pref-modal-own-country {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0 0 14px;
+    padding: 10px 12px;
+    border-radius: 12px;
+    background: rgba(50, 230, 161, 0.08);
+    border: 1px solid rgba(50, 230, 161, 0.16);
+    font-size: .8125rem;
+    color: var(--muted);
+}
+.pref-modal-own-country i {
+    color: var(--primary);
+    font-size: 1rem;
+}
+.pref-modal-own-country strong {
+    color: var(--text);
+    font-weight: 600;
+}
+.pref-modal-section-hint {
+    margin: 0 0 12px;
+    font-size: .78rem;
+    line-height: 1.5;
+    color: var(--muted);
+}
+.pref-modal-country-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    max-height: 220px;
+    overflow-y: auto;
+    padding-right: 2px;
+}
+.pref-modal-country-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 8px 12px;
+    border-radius: 999px;
+    border: 1px solid var(--hair-2);
+    background: rgba(255, 255, 255, 0.03);
+    color: var(--muted);
+    font-family: inherit;
+    font-size: .78rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: border-color 0.2s ease, background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+}
+.pref-modal-country-chip:hover {
+    border-color: rgba(50, 230, 161, 0.28);
+    color: var(--text);
+}
+.pref-modal-country-chip.is-active {
+    border-color: rgba(50, 230, 161, 0.45);
+    background: rgba(50, 230, 161, 0.12);
+    color: var(--text);
+    box-shadow: 0 0 0 1px rgba(50, 230, 161, 0.08);
+}
+.pref-modal-country-flag {
+    font-size: 1rem;
+    line-height: 1;
+}
+.pref-modal-country-check {
+    font-size: .9rem;
+    color: var(--primary);
+}
 .pref-age-track {
     position: relative;
     height: 28px;

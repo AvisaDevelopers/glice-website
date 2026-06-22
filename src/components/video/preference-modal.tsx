@@ -1,75 +1,58 @@
 "use client";
 
-import type { CSSProperties } from "react";
 import {
   clampAgeInRange,
-  clampDistance,
-  distanceDisplayLabel,
-  distanceStepForRange,
   normalizeAgeRangeInBounds,
 } from "@/features/video/lib/pref-bounds";
+import {
+  countryFilterLabel,
+  GLOBAL_COUNTRY_VALUE,
+  normalizeCountryFilter,
+  toggleCountrySelection,
+  VIDEO_COUNTRY_OPTIONS,
+} from "@/features/video/lib/country-options";
 
 type PreferenceModalProps = {
   open: boolean;
   minAge: number;
   maxAge: number;
-  maxDistance: number;
+  countries: string[];
+  ownCountryLabel?: string;
   ageMin: number;
   ageMax: number;
-  distanceMin: number;
-  distanceMax: number;
   onClose: () => void;
   onDone: (values: {
     minAge: number;
     maxAge: number;
-    maxDistance: number;
+    countries: string[];
   }) => void;
   onMinAgeChange: (value: number) => void;
   onMaxAgeChange: (value: number) => void;
-  onMaxDistanceChange: (value: number) => void;
+  onCountriesChange: (value: string[]) => void;
 };
-
-function distanceMidLabel(distanceMin: number, distanceMax: number) {
-  const step = distanceStepForRange(distanceMin, distanceMax);
-  const mid = Math.round((distanceMin + distanceMax) / 2 / step) * step;
-  return `${mid} km`;
-}
 
 export function PreferenceModal({
   open,
   minAge,
   maxAge,
-  maxDistance,
+  countries,
+  ownCountryLabel,
   ageMin,
   ageMax,
-  distanceMin,
-  distanceMax,
   onClose,
   onDone,
   onMinAgeChange,
   onMaxAgeChange,
-  onMaxDistanceChange,
+  onCountriesChange,
 }: PreferenceModalProps) {
   const safeAgeMin = Math.max(1, ageMin);
   const safeAgeMax = Math.max(safeAgeMin, ageMax);
-  const safeDistanceMin = Math.max(1, distanceMin);
-  const safeDistanceMax = Math.max(safeDistanceMin, distanceMax);
-  const distanceStep = distanceStepForRange(safeDistanceMin, safeDistanceMax);
+  const selectedCountries = normalizeCountryFilter(countries);
 
   const safeMin = clampAgeInRange(minAge, safeAgeMin, safeAgeMax);
   const safeMax = clampAgeInRange(maxAge, safeAgeMin, safeAgeMax);
   const displayMin = Math.min(safeMin, safeMax);
   const displayMax = Math.max(safeMin, safeMax);
-
-  const safeDistance = clampDistance(
-    maxDistance,
-    safeDistanceMin,
-    safeDistanceMax,
-  );
-  const distanceFill =
-    ((safeDistance - safeDistanceMin) /
-      (safeDistanceMax - safeDistanceMin)) *
-    100;
 
   const setMinAge = (value: number) => {
     const next = clampAgeInRange(value, safeAgeMin, safeAgeMax);
@@ -94,18 +77,12 @@ export function PreferenceModal({
       safeAgeMin,
       safeAgeMax,
     );
-    const distance = clampDistance(
-      maxDistance,
-      safeDistanceMin,
-      safeDistanceMax,
-    );
     if (ages.minAge !== minAge) onMinAgeChange(ages.minAge);
     if (ages.maxAge !== maxAge) onMaxAgeChange(ages.maxAge);
-    if (distance !== maxDistance) onMaxDistanceChange(distance);
     onDone({
       minAge: ages.minAge,
       maxAge: ages.maxAge,
-      maxDistance: distance,
+      countries: selectedCountries,
     });
   };
 
@@ -134,9 +111,9 @@ export function PreferenceModal({
             <i className="ri-equalizer-3-line" />
           </div>
           <div>
-            <h2 id="preferenceModalTitle">Preferences</h2>
+            <h2 id="preferenceModalTitle">Match preferences</h2>
             <p className="auth-modal-sub pref-modal-sub">
-              Set who you want to match with.
+              Choose countries and age range for random video calls.
             </p>
           </div>
         </div>
@@ -147,10 +124,63 @@ export function PreferenceModal({
             Ages {displayMin}–{displayMax}
           </span>
           <span className="pref-modal-summary-chip">
-            <i className="ri-map-pin-line" aria-hidden />
-            Within {distanceDisplayLabel(safeDistance, safeDistanceMax)}
+            <i className="ri-earth-line" aria-hidden />
+            {countryFilterLabel(selectedCountries)}
           </span>
         </div>
+
+        {ownCountryLabel ? (
+          <p className="pref-modal-own-country">
+            <i className="ri-map-pin-user-line" aria-hidden />
+            Your country: <strong>{ownCountryLabel}</strong>
+          </p>
+        ) : null}
+
+        <section
+          className="pref-modal-section"
+          aria-labelledby="prefCountryHeading"
+        >
+          <div className="pref-modal-section-head">
+            <h3 id="prefCountryHeading" className="pref-modal-section-title">
+              <i className="ri-earth-line" aria-hidden />
+              Connect with
+            </h3>
+            <span className="pref-modal-section-meta pref-modal-section-meta--accent">
+              {countryFilterLabel(selectedCountries)}
+            </span>
+          </div>
+          <p className="pref-modal-section-hint">
+            Pick one or more countries, or choose Global to match worldwide.
+            Both people must accept each other&apos;s country.
+          </p>
+          <div className="pref-modal-country-grid" role="listbox" aria-multiselectable>
+            {VIDEO_COUNTRY_OPTIONS.map((option) => {
+              const active = selectedCountries.includes(option.value);
+              return (
+                <button
+                  key={option.value}
+                  type="button"
+                  role="option"
+                  aria-selected={active}
+                  className={`pref-modal-country-chip${active ? " is-active" : ""}`}
+                  onClick={() =>
+                    onCountriesChange(
+                      toggleCountrySelection(selectedCountries, option.value),
+                    )
+                  }
+                >
+                  <span className="pref-modal-country-flag" aria-hidden>
+                    {option.flag}
+                  </span>
+                  <span>{option.label}</span>
+                  {active && option.value !== GLOBAL_COUNTRY_VALUE ? (
+                    <i className="ri-check-line pref-modal-country-check" aria-hidden />
+                  ) : null}
+                </button>
+              );
+            })}
+          </div>
+        </section>
 
         <section className="pref-modal-section" aria-labelledby="prefAgeHeading">
           <div className="pref-modal-section-head">
@@ -240,61 +270,9 @@ export function PreferenceModal({
           </div>
         </section>
 
-        <section
-          className="pref-modal-section"
-          aria-labelledby="prefDistanceHeading"
-        >
-          <div className="pref-modal-section-head">
-            <h3 id="prefDistanceHeading" className="pref-modal-section-title">
-              <i className="ri-radar-line" aria-hidden />
-              Max distance
-            </h3>
-            <span className="pref-modal-section-meta pref-modal-section-meta--accent">
-              {distanceDisplayLabel(safeDistance, safeDistanceMax)}
-            </span>
-          </div>
-
-          <div className="pref-distance-slider">
-            <div
-              className="pref-distance-track"
-              aria-hidden
-              style={
-                { "--pref-distance-fill": `${distanceFill}%` } as CSSProperties
-              }
-            >
-              <span className="pref-distance-track-rail" />
-              <span className="pref-distance-track-fill" />
-            </div>
-            <input
-              type="range"
-              className="pref-distance-range"
-              id="prefMaxDistance"
-              min={safeDistanceMin}
-              max={safeDistanceMax}
-              step={distanceStep}
-              value={safeDistance}
-              onChange={(event) =>
-                onMaxDistanceChange(
-                  clampDistance(
-                    Number(event.target.value),
-                    safeDistanceMin,
-                    safeDistanceMax,
-                  ),
-                )
-              }
-            />
-          </div>
-
-          <div className="pref-distance-scale" aria-hidden>
-            <span>{safeDistanceMin} km</span>
-            <span>{distanceMidLabel(safeDistanceMin, safeDistanceMax)}</span>
-            <span>{safeDistanceMax}+ km</span>
-          </div>
-        </section>
-
         <button type="button" className="pref-modal-done" onClick={handleDone}>
           <i className="ri-check-line" aria-hidden />
-          Done
+          Save preferences
         </button>
       </div>
     </div>

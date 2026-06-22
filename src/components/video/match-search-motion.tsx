@@ -2,11 +2,13 @@
 
 import { useId } from "react";
 
-type NearbySearchMotionProps = {
-  radiusKm?: number;
+type MatchSearchMotionProps = {
+  scopeLabel?: string;
 };
 
-export function NearbySearchMotion({ radiusKm = 50 }: NearbySearchMotionProps) {
+export function NearbySearchMotion({
+  scopeLabel = "worldwide",
+}: MatchSearchMotionProps) {
   const uid = useId().replace(/:/g, "");
   const glowId = `nearby-glow-${uid}`;
   const beamId = `nearby-beam-${uid}`;
@@ -115,10 +117,8 @@ export function NearbySearchMotion({ radiusKm = 50 }: NearbySearchMotionProps) {
         />
       </svg>
 
-      <p className="nearby-search-label">Finding people near you…</p>
-      <p className="nearby-search-sublabel">
-        Scanning within {radiusKm} km of your location
-      </p>
+      <p className="nearby-search-label">Finding your next match…</p>
+      <p className="nearby-search-sublabel">Looking for people in {scopeLabel}</p>
     </div>
   );
 }

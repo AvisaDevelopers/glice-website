@@ -1,27 +1,22 @@
 import { genderFilterToLookingFor } from "@/lib/gender-options";
 import type { VideoFilterInput } from "../types";
-import type { DiscoverLocationPayload } from "./discover-location";
+import {
+  GLOBAL_COUNTRY_VALUE,
+  normalizeCountryFilter,
+} from "./country-options";
 
-const BACKEND_UNLIMITED_DISTANCE = 999_999_999;
-
-/** Mirrors Flutter FilterModel.toJsonForCameraScreen */
-export function buildDiscoverFilter(
-  input: VideoFilterInput,
-  distanceMaxThreshold: number,
-  location?: DiscoverLocationPayload | null,
-) {
-  const atMax = input.maxDistance >= distanceMaxThreshold;
-  const maxDistanceOut = atMax
-    ? BACKEND_UNLIMITED_DISTANCE
-    : input.maxDistance;
+/** Payload for socket `discover` — country-based matching (no geo radius). */
+export function buildDiscoverFilter(input: VideoFilterInput) {
+  const countries = normalizeCountryFilter(input.countries);
 
   return {
     minAge: input.minAge,
     maxAge: input.maxAge,
-    interest: "Any",
-    minDistance: input.minDistance,
-    maxDistance: maxDistanceOut,
+    interest: "any",
     lookingFor: genderFilterToLookingFor(input.gender),
-    location: location ?? null,
+    countries:
+      countries.length === 1 && countries[0] === GLOBAL_COUNTRY_VALUE
+        ? GLOBAL_COUNTRY_VALUE
+        : countries,
   };
 }
