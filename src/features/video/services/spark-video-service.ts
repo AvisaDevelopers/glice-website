@@ -15,7 +15,10 @@ import {
 import { ensureLocalStream } from "../lib/ensure-local-stream";
 import { buildDiscoverFilter } from "../lib/filter-payload";
 import { readProfileStatus } from "@/lib/verification-status";
-import { parsePeerFoundPayload, videoPartnerFromPeerFound } from "../lib/parse-peer-found";
+import {
+  parsePeerFoundPayload,
+  videoPartnerFromPeerFound,
+} from "../lib/parse-peer-found";
 import { parseTempMessagePayload } from "../lib/parse-temp-message";
 import { releaseMediaStream } from "../lib/release-media-stream";
 import {
@@ -71,6 +74,7 @@ class SparkVideoService {
   private intentionalTeardown = false;
 
   private readonly onSocketPeerError = (raw: unknown) => {
+    console.info("[Spark] peer_error", raw);
     const code = typeof raw === "string" ? raw : "match_failed";
     const store = useVideoCallStore.getState();
     if (store.stage !== "searching" && store.stage !== "connecting") return;
@@ -285,7 +289,10 @@ class SparkVideoService {
   leaveLobby() {
     if (!this.user) return;
     if (!chatSocket.isConnected()) return;
-    chatSocket.emitEvent("leave_event", buildSparkLeavePayload(this.user.email));
+    chatSocket.emitEvent(
+      "leave_event",
+      buildSparkLeavePayload(this.user.email),
+    );
   }
 
   private registerLobbyListener() {
@@ -686,7 +693,9 @@ class SparkVideoService {
     } catch (err) {
       if (matchGen !== this.matchGeneration) return;
       console.warn("[Spark] Peer init on match failed:", err);
-      store.setError("Could not start video connection. Tap Start to try again.");
+      store.setError(
+        "Could not start video connection. Tap Start to try again.",
+      );
       peerService.disconnect();
       store.setStage("idle");
       return;
@@ -945,7 +954,7 @@ class SparkVideoService {
     this.stopSearchTimer();
     this.stopDiscoverRetry();
 
-        const celebrationPartner: VideoPartner = snapshot
+    const celebrationPartner: VideoPartner = snapshot
       ? {
           ...snapshot,
           name: data.otherUser?.name ?? snapshot.name,
