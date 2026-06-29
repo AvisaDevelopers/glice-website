@@ -4523,6 +4523,68 @@ body:not(.is-logged-in) .hero-user-ui { display: none; }
     line-height: 1.5;
     color: var(--muted);
 }
+.pref-modal-country-search {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+    padding: 0 12px;
+    min-height: 40px;
+    border-radius: 12px;
+    border: 1px solid var(--hair-2);
+    background: var(--bg);
+}
+.pref-modal-country-search:focus-within {
+    border-color: rgba(50, 230, 161, 0.35);
+    box-shadow: 0 0 0 1px rgba(50, 230, 161, 0.12);
+}
+.pref-modal-country-search-icon {
+    flex-shrink: 0;
+    color: var(--muted);
+    font-size: 1rem;
+}
+.pref-modal-country-search-input {
+    flex: 1 1 auto;
+    min-width: 0;
+    height: 40px;
+    border: none;
+    background: transparent;
+    color: var(--text);
+    font-family: inherit;
+    font-size: .84rem;
+    outline: none;
+}
+.pref-modal-country-search-input::placeholder {
+    color: var(--muted);
+}
+.pref-modal-country-search-input::-webkit-search-cancel-button {
+    display: none;
+}
+.pref-modal-country-search-clear {
+    flex-shrink: 0;
+    width: 28px;
+    height: 28px;
+    border: none;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--muted);
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+    transition: background .15s ease, color .15s ease;
+}
+.pref-modal-country-search-clear:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text);
+}
+.pref-modal-country-empty {
+    width: 100%;
+    margin: 0;
+    padding: 18px 8px;
+    text-align: center;
+    font-size: .8rem;
+    color: var(--muted);
+}
 .pref-modal-country-grid {
     display: flex;
     flex-wrap: wrap;
@@ -4820,6 +4882,15 @@ body:not(.is-logged-in) .hero-user-ui { display: none; }
     .pref-modal-section-hint {
         font-size: .74rem;
         margin-bottom: 10px;
+    }
+    .pref-modal-country-search {
+        min-height: 38px;
+        margin-bottom: 8px;
+        padding: 0 10px;
+    }
+    .pref-modal-country-search-input {
+        height: 38px;
+        font-size: .8rem;
     }
     .pref-modal-country-grid {
         max-height: min(170px, calc(100dvh - var(--site-header-h) - 280px));

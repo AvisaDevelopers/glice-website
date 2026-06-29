@@ -1,16 +1,16 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   clampAgeInRange,
   normalizeAgeRangeInBounds,
 } from "@/features/video/lib/pref-bounds";
 import {
   countryFilterLabel,
+  filterCountryOptions,
   GLOBAL_COUNTRY_VALUE,
   normalizeCountryFilter,
   toggleCountrySelection,
-  VIDEO_COUNTRY_OPTIONS,
 } from "@/features/video/lib/country-options";
 
 type PreferenceModalProps = {
@@ -49,6 +49,12 @@ export function PreferenceModal({
   const safeAgeMin = Math.max(1, ageMin);
   const safeAgeMax = Math.max(safeAgeMin, ageMax);
   const selectedCountries = normalizeCountryFilter(countries);
+  const [countrySearch, setCountrySearch] = useState("");
+
+  const filteredCountryOptions = useMemo(
+    () => filterCountryOptions(countrySearch),
+    [countrySearch],
+  );
 
   const safeMin = clampAgeInRange(minAge, safeAgeMin, safeAgeMax);
   const safeMax = clampAgeInRange(maxAge, safeAgeMin, safeAgeMax);
@@ -88,7 +94,10 @@ export function PreferenceModal({
   };
 
   useEffect(() => {
-    if (!open) return;
+    if (!open) {
+      setCountrySearch("");
+      return;
+    }
 
     const scrollY = window.scrollY;
     const { style } = document.body;
@@ -188,8 +197,32 @@ export function PreferenceModal({
             Pick one or more countries, or choose Global to match worldwide.
             Both people must accept each other&apos;s country.
           </p>
+          <label className="pref-modal-country-search" htmlFor="prefCountrySearch">
+            <i className="ri-search-line pref-modal-country-search-icon" aria-hidden />
+            <input
+              id="prefCountrySearch"
+              type="search"
+              className="pref-modal-country-search-input"
+              placeholder="Search countries..."
+              value={countrySearch}
+              onChange={(event) => setCountrySearch(event.target.value)}
+              autoComplete="off"
+              enterKeyHint="search"
+            />
+            {countrySearch ? (
+              <button
+                type="button"
+                className="pref-modal-country-search-clear"
+                aria-label="Clear country search"
+                onClick={() => setCountrySearch("")}
+              >
+                <i className="ri-close-line" aria-hidden />
+              </button>
+            ) : null}
+          </label>
           <div className="pref-modal-country-grid" role="listbox" aria-multiselectable>
-            {VIDEO_COUNTRY_OPTIONS.map((option) => {
+            {filteredCountryOptions.length ? (
+              filteredCountryOptions.map((option) => {
               const active = selectedCountries.includes(option.value);
               return (
                 <button
@@ -213,7 +246,10 @@ export function PreferenceModal({
                   ) : null}
                 </button>
               );
-            })}
+              })
+            ) : (
+              <p className="pref-modal-country-empty">No countries found.</p>
+            )}
           </div>
         </section>
 

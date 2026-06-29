@@ -109,3 +109,17 @@ export function searchScopeMessage(values: string[]): string {
   }
   return `Matching with ${label}`;
 }
+
+export function filterCountryOptions(
+  query: string,
+  options: VideoCountryOption[] = VIDEO_COUNTRY_OPTIONS,
+): VideoCountryOption[] {
+  const trimmed = query.trim().toLowerCase();
+  if (!trimmed) return options;
+
+  return options.filter((option) => {
+    const label = option.label.toLowerCase();
+    const value = normalizeCountryValue(option.value);
+    return label.includes(trimmed) || value.includes(trimmed);
+  });
+}
