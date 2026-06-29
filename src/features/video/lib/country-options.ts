@@ -1,3 +1,6 @@
+import { countryCodeToFlag } from "@/components/layout/profile-menu-utils";
+import countries from "world-countries";
+
 export const GLOBAL_COUNTRY_VALUE = "global";
 
 export type VideoCountryOption = {
@@ -6,34 +9,42 @@ export type VideoCountryOption = {
   flag: string;
 };
 
+/** Legacy short values still accepted from saved preferences / backend. */
+const COUNTRY_VALUE_ALIASES: Record<string, string> = {
+  usa: "united states",
+  uk: "united kingdom",
+  uae: "united arab emirates",
+};
+
+const GLOBAL_OPTION: VideoCountryOption = {
+  value: GLOBAL_COUNTRY_VALUE,
+  label: "Global",
+  flag: "🌍",
+};
+
+const WORLD_COUNTRY_OPTIONS: VideoCountryOption[] = countries
+  .map((country) => ({
+    value: country.name.common.toLowerCase(),
+    label: country.name.common,
+    flag: countryCodeToFlag(country.cca2),
+  }))
+  .sort((a, b) => a.label.localeCompare(b.label));
+
 export const VIDEO_COUNTRY_OPTIONS: VideoCountryOption[] = [
-  { value: GLOBAL_COUNTRY_VALUE, label: "Global", flag: "🌍" },
-  { value: "usa", label: "United States", flag: "🇺🇸" },
-  { value: "pakistan", label: "Pakistan", flag: "🇵🇰" },
-  { value: "india", label: "India", flag: "🇮🇳" },
-  { value: "uk", label: "United Kingdom", flag: "🇬🇧" },
-  { value: "canada", label: "Canada", flag: "🇨🇦" },
-  { value: "australia", label: "Australia", flag: "🇦🇺" },
-  { value: "uae", label: "UAE", flag: "🇦🇪" },
-  { value: "saudi arabia", label: "Saudi Arabia", flag: "🇸🇦" },
-  { value: "germany", label: "Germany", flag: "🇩🇪" },
-  { value: "france", label: "France", flag: "🇫🇷" },
-  { value: "spain", label: "Spain", flag: "🇪🇸" },
-  { value: "italy", label: "Italy", flag: "🇮🇹" },
-  { value: "brazil", label: "Brazil", flag: "🇧🇷" },
-  { value: "mexico", label: "Mexico", flag: "🇲🇽" },
-  { value: "turkey", label: "Turkey", flag: "🇹🇷" },
-  { value: "bangladesh", label: "Bangladesh", flag: "🇧🇩" },
-  { value: "nigeria", label: "Nigeria", flag: "🇳🇬" },
-  { value: "south africa", label: "South Africa", flag: "🇿🇦" },
-  { value: "japan", label: "Japan", flag: "🇯🇵" },
-  { value: "south korea", label: "South Korea", flag: "🇰🇷" },
-  { value: "philippines", label: "Philippines", flag: "🇵🇭" },
-  { value: "indonesia", label: "Indonesia", flag: "🇮🇩" },
+  GLOBAL_OPTION,
+  ...WORLD_COUNTRY_OPTIONS,
 ];
 
+const COUNTRY_LABEL_BY_VALUE = new Map(
+  VIDEO_COUNTRY_OPTIONS.map((option) => [
+    normalizeCountryValue(option.value),
+    option.label,
+  ]),
+);
+
 export function normalizeCountryValue(value: string): string {
-  return value.trim().toLowerCase();
+  const normalized = value.trim().toLowerCase();
+  return COUNTRY_VALUE_ALIASES[normalized] ?? normalized;
 }
 
 export function isGlobalCountryFilter(values: string[]): boolean {
@@ -51,10 +62,8 @@ export function normalizeCountryFilter(values: string[]): string[] {
 
 export function countryOptionLabel(value: string): string {
   const normalized = normalizeCountryValue(value);
-  const match = VIDEO_COUNTRY_OPTIONS.find(
-    (option) => normalizeCountryValue(option.value) === normalized,
-  );
-  if (match) return match.label;
+  const match = COUNTRY_LABEL_BY_VALUE.get(normalized);
+  if (match) return match;
   return value
     .split(" ")
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1))

@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import {
   clampAgeInRange,
   normalizeAgeRangeInBounds,
@@ -86,9 +87,43 @@ export function PreferenceModal({
     });
   };
 
+  useEffect(() => {
+    if (!open) return;
+
+    const scrollY = window.scrollY;
+    const { style } = document.body;
+    const previous = {
+      position: style.position,
+      top: style.top,
+      left: style.left,
+      right: style.right,
+      width: style.width,
+      overflow: style.overflow,
+    };
+
+    document.body.classList.add("pref-modal-open");
+    style.position = "fixed";
+    style.top = `-${scrollY}px`;
+    style.left = "0";
+    style.right = "0";
+    style.width = "100%";
+    style.overflow = "hidden";
+
+    return () => {
+      document.body.classList.remove("pref-modal-open");
+      style.position = previous.position;
+      style.top = previous.top;
+      style.left = previous.left;
+      style.right = previous.right;
+      style.width = previous.width;
+      style.overflow = previous.overflow;
+      window.scrollTo(0, scrollY);
+    };
+  }, [open]);
+
   return (
     <div
-      className={`modal-backdrop${open ? " is-open" : ""}`}
+      className={`modal-backdrop pref-modal-backdrop${open ? " is-open" : ""}`}
       aria-hidden={!open}
       role="dialog"
       aria-labelledby="preferenceModalTitle"
@@ -137,7 +172,7 @@ export function PreferenceModal({
         ) : null}
 
         <section
-          className="pref-modal-section"
+          className="pref-modal-section pref-modal-section--countries"
           aria-labelledby="prefCountryHeading"
         >
           <div className="pref-modal-section-head">
