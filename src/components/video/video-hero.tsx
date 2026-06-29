@@ -150,9 +150,10 @@ export function VideoHero() {
   const [minAge, setMinAge] = useState(VIDEO_MATCH_DEFAULT_RESTRICTIONS.ageMin);
   const [maxAge, setMaxAge] = useState(VIDEO_MATCH_DEFAULT_RESTRICTIONS.ageMax);
   const [countries, setCountries] = useState<string[]>([GLOBAL_COUNTRY_VALUE]);
-  const [restrictions, setRestrictions] = useState<VideoMatchRestrictions>(
-    VIDEO_MATCH_DEFAULT_RESTRICTIONS,
-  );
+  const [restrictions, setRestrictions] = useState<VideoMatchRestrictions>(() => ({
+    ...VIDEO_MATCH_DEFAULT_RESTRICTIONS,
+    genders: [],
+  }));
   const [reportOpen, setReportOpen] = useState(false);
 
   const ageMin = restrictions.ageMin;
@@ -199,7 +200,7 @@ export function VideoHero() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [isLoggedIn]);
 
   useEffect(() => {
     if (!genderOptions.some((option) => option.title === gender)) {
