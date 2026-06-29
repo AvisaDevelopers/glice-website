@@ -2,6 +2,8 @@ import { countryCodeToFlag } from "@/components/layout/profile-menu-utils";
 import countries from "world-countries";
 
 export const GLOBAL_COUNTRY_VALUE = "global";
+/** After this many seconds without a match, country filter widens to global. */
+export const COUNTRY_SEARCH_FALLBACK_SECONDS = 120;
 
 export type VideoCountryOption = {
   value: string;

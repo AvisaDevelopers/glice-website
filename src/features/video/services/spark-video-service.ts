@@ -14,6 +14,12 @@ import {
 } from "../api/video-config-api";
 import { ensureLocalStream } from "../lib/ensure-local-stream";
 import { buildDiscoverFilter } from "../lib/filter-payload";
+import {
+  COUNTRY_SEARCH_FALLBACK_SECONDS,
+  GLOBAL_COUNTRY_VALUE,
+  isGlobalCountryFilter,
+  normalizeCountryFilter,
+} from "../lib/country-options";
 import { readProfileStatus } from "@/lib/verification-status";
 import {
   parsePeerFoundPayload,
@@ -70,6 +76,8 @@ class SparkVideoService {
   private matchGeneration = 0;
   private sessionEndGeneration = 0;
   private pendingSessionEndTimer: ReturnType<typeof setTimeout> | null = null;
+  /** Syncs UI when search widens to global after no match in time. */
+  private onCountriesReset: ((countries: string[]) => void) | null = null;
   /** Suppress onRemoteDisconnected while we intentionally close the peer. */
   private intentionalTeardown = false;
 
@@ -222,6 +230,10 @@ class SparkVideoService {
     void this.prepare(user);
   }
 
+  setOnCountriesReset(handler: ((countries: string[]) => void) | null) {
+    this.onCountriesReset = handler;
+  }
+
   unbind() {
     this.leaveLobby();
     this.unregisterLobbyListener();
@@ -238,6 +250,7 @@ class SparkVideoService {
     this.matchListenUntil = 0;
     this.user = null;
     this.handlers = null;
+    this.onCountriesReset = null;
     this.currentFilter = null;
     this.firstSessionUpdated = false;
     this.cachedConfig = null;
@@ -853,22 +866,63 @@ class SparkVideoService {
     });
   }
 
+  private getSearchTimerDuration(): number {
+    const maxWait = useVideoCallStore.getState().config?.maxWaitTime ?? 90;
+    if (!this.currentFilter) return maxWait;
+    const countries = normalizeCountryFilter(this.currentFilter.countries);
+    if (isGlobalCountryFilter(countries)) return maxWait;
+    return COUNTRY_SEARCH_FALLBACK_SECONDS;
+  }
+
+  private hasNonGlobalCountryFilter(): boolean {
+    if (!this.currentFilter) return false;
+    return !isGlobalCountryFilter(
+      normalizeCountryFilter(this.currentFilter.countries),
+    );
+  }
+
+  private expandCountrySearchToGlobal() {
+    if (!this.currentFilter || !this.user) return;
+    if (!this.hasNonGlobalCountryFilter()) return;
+
+    this.emitHangUp();
+
+    this.currentFilter = {
+      ...this.currentFilter,
+      countries: [GLOBAL_COUNTRY_VALUE],
+    };
+
+    this.onCountriesReset?.([GLOBAL_COUNTRY_VALUE]);
+    this.emitDiscover();
+  }
+
   private beginSearchTimer() {
     const store = useVideoCallStore.getState();
-    const maxWait = store.config?.maxWaitTime ?? 90;
-    store.setSearchSecondsLeft(maxWait);
+    store.setSearchSecondsLeft(this.getSearchTimerDuration());
     store.setRoundsLeft(Math.max(0, store.roundsLeft - 1));
 
     this.stopSearchTimer();
     this.searchTimer = setInterval(() => {
-      const left = useVideoCallStore.getState().searchSecondsLeft - 1;
-      useVideoCallStore.getState().setSearchSecondsLeft(left);
-      if (left <= 0) {
+      const activeStore = useVideoCallStore.getState();
+      if (activeStore.stage !== "searching") {
         this.stopSearchTimer();
-        peerService.endCall();
-        useVideoCallStore.getState().setError("No match found. Try again.");
-        useVideoCallStore.getState().setStage("idle");
+        return;
       }
+
+      const left = activeStore.searchSecondsLeft - 1;
+      activeStore.setSearchSecondsLeft(left);
+      if (left > 0) return;
+
+      if (this.hasNonGlobalCountryFilter()) {
+        this.expandCountrySearchToGlobal();
+        activeStore.setSearchSecondsLeft(this.getSearchTimerDuration());
+        return;
+      }
+
+      this.stopSearchTimer();
+      peerService.endCall();
+      activeStore.setError("No match found. Try again.");
+      activeStore.setStage("idle");
     }, 1000);
   }
 

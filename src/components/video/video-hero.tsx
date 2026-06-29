@@ -219,6 +219,13 @@ export function VideoHero() {
   }, [isLoggedIn, callStage, gender]);
 
   useEffect(() => {
+    sparkVideoService.setOnCountriesReset(setCountriesBounded);
+    return () => {
+      sparkVideoService.setOnCountriesReset(null);
+    };
+  }, [setCountriesBounded]);
+
+  useEffect(() => {
     if (!prefOpen) return;
     const ages = normalizeAgeRangeInBounds(minAge, maxAge, ageMin, ageMax);
     if (ages.minAge !== minAge) setMinAge(ages.minAge);
