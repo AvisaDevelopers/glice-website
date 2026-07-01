@@ -7,12 +7,14 @@ type MediaPermissionGateProps = {
   status: MediaStatus;
   exiting?: boolean;
   onRequest: () => void | Promise<boolean>;
+  variant?: "default" | "omegle";
 };
 
 export function MediaPermissionGate({
   status,
   exiting = false,
   onRequest,
+  variant = "default",
 }: MediaPermissionGateProps) {
   const isRequesting = status === "requesting";
   const isDenied = status === "denied";
@@ -24,7 +26,7 @@ export function MediaPermissionGate({
 
   return (
     <div
-      className={`media-permission-gate${exiting ? " media-permission-gate--exiting" : ""}`}
+      className={`media-permission-gate${exiting ? " media-permission-gate--exiting" : ""}${variant === "omegle" ? " media-permission-gate--omegle" : ""}`}
       role="dialog"
       aria-modal="true"
       aria-labelledby="media-gate-title"

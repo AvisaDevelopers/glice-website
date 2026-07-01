@@ -30,6 +30,7 @@ type PreferenceModalProps = {
   onMinAgeChange: (value: number) => void;
   onMaxAgeChange: (value: number) => void;
   onCountriesChange: (value: string[]) => void;
+  variant?: "default" | "omegle";
 };
 
 export function PreferenceModal({
@@ -45,6 +46,7 @@ export function PreferenceModal({
   onMinAgeChange,
   onMaxAgeChange,
   onCountriesChange,
+  variant = "default",
 }: PreferenceModalProps) {
   const safeAgeMin = Math.max(1, ageMin);
   const safeAgeMax = Math.max(safeAgeMin, ageMax);
@@ -132,7 +134,7 @@ export function PreferenceModal({
 
   return (
     <div
-      className={`modal-backdrop pref-modal-backdrop${open ? " is-open" : ""}`}
+      className={`modal-backdrop pref-modal-backdrop${open ? " is-open" : ""}${variant === "omegle" ? " modal-backdrop--omegle" : ""}`}
       aria-hidden={!open}
       role="dialog"
       aria-labelledby="preferenceModalTitle"
@@ -140,7 +142,9 @@ export function PreferenceModal({
         if (event.target === event.currentTarget) onClose();
       }}
     >
-      <div className="pref-modal">
+      <div
+        className={`pref-modal${variant === "omegle" ? " pref-modal--omegle" : ""}`}
+      >
         <button
           type="button"
           className="auth-modal-close"

@@ -1,10 +1,14 @@
 import { ChatShell } from "@/features/chat/components/chat-shell";
 import { Shimmer } from "@/components/ui/shimmer";
+import { buildPageMetadata } from "@/lib/seo/build-metadata";
 import { Suspense } from "react";
 
-export const metadata = {
+export const metadata = buildPageMetadata({
   title: "Messages",
-};
+  description: "Your Glice conversations and matched chats.",
+  path: "/messages",
+  noindex: true,
+});
 
 function ChatFallback() {
   return (

@@ -1,16 +1,31 @@
 import { MarketingCta } from "@/components/marketing/marketing-cta";
 import { PageHero } from "@/components/marketing/page-hero";
-import type { Metadata } from "next";
+import { MarketingPageJsonLd } from "@/components/seo/marketing-page-json-ld";
+import { buildPageMetadata } from "@/lib/seo/build-metadata";
 
-export const metadata: Metadata = {
-  title: "About",
+const SEO = {
+  title: "About Glice — Live Video Chat & Social Discovery",
   description:
-    "About Glice - consent-first live video chat, social discovery, and meaningful conversations.",
-};
+    "Learn about Glice — consent-first live video chat, mutual matching, social discovery, and our mission to build safer online connections.",
+  path: "/about",
+  pageName: "About",
+  keywords: [
+    "about glice",
+    "glice video chat",
+    "social discovery app",
+    "consent-first matching",
+    "live video chat company",
+    "random chat app",
+    "online connections",
+  ],
+} as const;
+
+export const metadata = buildPageMetadata(SEO);
 
 export default function AboutPage() {
   return (
     <>
+      <MarketingPageJsonLd {...SEO} />
       <PageHero
         title={
           <>

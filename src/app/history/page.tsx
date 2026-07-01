@@ -1,11 +1,13 @@
 import { CallHistoryView } from "@/components/video/call-history-view";
+import { buildPageMetadata } from "@/lib/seo/build-metadata";
 import { History } from "lucide-react";
-import type { Metadata } from "next";
 
-export const metadata: Metadata = {
-  title: "Call History | Glice",
+export const metadata = buildPageMetadata({
+  title: "Call History",
   description: "Your recent random and spark video calls on Glice.",
-};
+  path: "/history",
+  noindex: true,
+});
 
 export default function CallHistoryPage() {
   return (

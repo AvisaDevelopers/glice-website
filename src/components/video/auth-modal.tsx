@@ -19,7 +19,11 @@ import { useEffect, useState } from "react";
 type AuthStep = "continue" | "email";
 type SignupPhase = "details" | "otp";
 
-export function AuthModal() {
+type AuthModalProps = {
+  variant?: "default" | "omegle";
+};
+
+export function AuthModal({ variant = "default" }: AuthModalProps) {
   const router = useRouter();
   const { authModalOpen, authModalMode, closeAuth, setUserFromAuth } =
     useUiSession();
@@ -161,7 +165,7 @@ export function AuthModal() {
 
   return (
     <div
-      className={`modal-backdrop${authModalOpen ? " is-open" : ""}`}
+      className={`modal-backdrop${authModalOpen ? " is-open" : ""}${variant === "omegle" ? " modal-backdrop--omegle" : ""}`}
       aria-hidden={!authModalOpen}
       role="dialog"
       aria-labelledby="authModalTitle"
@@ -169,7 +173,9 @@ export function AuthModal() {
         if (event.target === event.currentTarget) closeAuth();
       }}
     >
-      <div className="auth-modal">
+      <div
+        className={`auth-modal${variant === "omegle" ? " auth-modal--omegle" : ""}`}
+      >
         <button
           type="button"
           className="auth-modal-close"
@@ -180,6 +186,9 @@ export function AuthModal() {
         </button>
 
         <div className={`auth-panel${step === "continue" ? " is-active" : ""}`}>
+          {variant === "omegle" ? (
+            <p className="auth-modal-brand">Omegle</p>
+          ) : null}
           <h2 id="authModalTitle">Start video chatting</h2>
           <p className="auth-modal-sub">Sign in to connect with people live.</p>
           {error && step === "continue" && (

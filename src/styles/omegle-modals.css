@@ -1,0 +1,424 @@
+/* Omegle route modal overrides — white panels, orange CTAs, orange brand */
+
+body.omegle-route .modal-backdrop,
+.modal-backdrop--omegle {
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+/* ── Auth modal ── */
+body.omegle-route .auth-modal,
+.auth-modal--omegle {
+  background: #ffffff;
+  border: 1px solid #cccccc;
+  border-radius: 8px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+  color: #333333;
+}
+
+body.omegle-route .auth-modal h2,
+.auth-modal--omegle h2 {
+  color: #000000;
+}
+
+body.omegle-route .auth-modal-sub,
+.auth-modal--omegle .auth-modal-sub {
+  color: #666666;
+}
+
+body.omegle-route .auth-modal-brand,
+.auth-modal--omegle .auth-modal-brand {
+  margin: 0 0 12px;
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #ff6600;
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+
+body.omegle-route .auth-modal-close,
+.auth-modal--omegle .auth-modal-close {
+  background: #f5f5f5;
+  border-color: #cccccc;
+  color: #666666;
+}
+
+body.omegle-route .auth-modal-close:hover,
+.auth-modal--omegle .auth-modal-close:hover {
+  color: #333333;
+  background: #eeeeee;
+}
+
+body.omegle-route .auth-modal .continue-btn--email,
+.auth-modal--omegle .continue-btn--email {
+  background: #ffffff;
+  border: 1px solid #cccccc;
+  color: #333333;
+  backdrop-filter: none;
+}
+
+body.omegle-route .auth-modal .continue-btn--email:hover,
+.auth-modal--omegle .continue-btn--email:hover {
+  background: #f5f5f5;
+  border-color: #bbbbbb;
+}
+
+body.omegle-route .auth-modal .hero-email-tabs,
+.auth-modal--omegle .hero-email-tabs {
+  background: #f0f0f0;
+  border-color: #cccccc;
+}
+
+body.omegle-route .auth-modal .hero-tab,
+.auth-modal--omegle .hero-tab {
+  color: #666666;
+}
+
+body.omegle-route .auth-modal .hero-tab.is-active,
+.auth-modal--omegle .hero-tab.is-active {
+  background: #ffffff;
+  color: #000000;
+}
+
+body.omegle-route .auth-modal .hero-field input,
+.auth-modal--omegle .hero-field input {
+  background: #ffffff;
+  border-color: #cccccc;
+  color: #333333;
+}
+
+body.omegle-route .auth-modal .hero-field input::placeholder,
+.auth-modal--omegle .hero-field input::placeholder {
+  color: #999999;
+}
+
+body.omegle-route .auth-modal .hero-back,
+.auth-modal--omegle .hero-back {
+  color: #666666;
+}
+
+body.omegle-route .auth-modal .hero-back:hover,
+.auth-modal--omegle .hero-back:hover {
+  color: #333333;
+}
+
+body.omegle-route .auth-modal .btn-primary,
+body.omegle-route .auth-modal .hero-submit,
+.auth-modal--omegle .btn-primary,
+.auth-modal--omegle .hero-submit {
+  background: #ff6600;
+  color: #ffffff;
+}
+
+body.omegle-route .auth-modal .btn-primary:hover,
+body.omegle-route .auth-modal .hero-submit:hover,
+.auth-modal--omegle .btn-primary:hover,
+.auth-modal--omegle .hero-submit:hover {
+  background: #e55a00;
+}
+
+body.omegle-route .auth-modal .auth-terms-note,
+.auth-modal--omegle .auth-terms-note {
+  color: #666666;
+}
+
+body.omegle-route .auth-modal .auth-terms-note a,
+body.omegle-route .auth-modal .auth-forgot,
+body.omegle-route .auth-modal .auth-terms a,
+.auth-modal--omegle .auth-terms-note a,
+.auth-modal--omegle .auth-forgot,
+.auth-modal--omegle .auth-terms a {
+  color: #ff6600;
+}
+
+body.omegle-route .auth-modal .auth-terms,
+.auth-modal--omegle .auth-terms {
+  color: #666666;
+}
+
+/* ── Preference modal ── */
+body.omegle-route .pref-modal,
+.pref-modal--omegle {
+  background: #ffffff;
+  border: 1px solid #cccccc;
+  border-radius: 8px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+  color: #333333;
+}
+
+body.omegle-route .pref-modal h2,
+body.omegle-route .pref-modal h3,
+.pref-modal--omegle h2,
+.pref-modal--omegle h3 {
+  color: #000000;
+}
+
+body.omegle-route .pref-modal-sub,
+body.omegle-route .pref-modal-section-hint,
+body.omegle-route .pref-modal-own-country,
+.pref-modal--omegle .pref-modal-sub,
+.pref-modal--omegle .pref-modal-section-hint,
+.pref-modal--omegle .pref-modal-own-country {
+  color: #666666;
+}
+
+body.omegle-route .pref-modal-icon,
+.pref-modal--omegle .pref-modal-icon {
+  background: rgba(255, 102, 0, 0.1);
+  border-color: rgba(255, 102, 0, 0.25);
+  color: #ff6600;
+}
+
+body.omegle-route .pref-modal-summary-chip,
+.pref-modal--omegle .pref-modal-summary-chip {
+  background: #f5f5f5;
+  border-color: #cccccc;
+  color: #333333;
+}
+
+body.omegle-route .pref-modal-summary-chip i,
+body.omegle-route .pref-modal-section-title i,
+body.omegle-route .pref-modal-section-meta--accent,
+.pref-modal--omegle .pref-modal-summary-chip i,
+.pref-modal--omegle .pref-modal-section-title i,
+.pref-modal--omegle .pref-modal-section-meta--accent {
+  color: #ff6600;
+}
+
+body.omegle-route .pref-modal-section,
+.pref-modal--omegle .pref-modal-section {
+  background: #f9f9f9;
+  border-color: #e0e0e0;
+}
+
+body.omegle-route .pref-modal-country-search,
+.pref-modal--omegle .pref-modal-country-search {
+  background: #ffffff;
+  border-color: #cccccc;
+}
+
+body.omegle-route .pref-modal-country-search-input,
+.pref-modal--omegle .pref-modal-country-search-input {
+  color: #333333;
+}
+
+body.omegle-route .pref-modal-country-chip,
+.pref-modal--omegle .pref-modal-country-chip {
+  background: #ffffff;
+  border-color: #cccccc;
+  color: #333333;
+}
+
+body.omegle-route .pref-modal-country-chip.is-active,
+.pref-modal--omegle .pref-modal-country-chip.is-active {
+  border-color: #ff6600;
+  background: rgba(255, 102, 0, 0.1);
+  color: #cc5500;
+}
+
+body.omegle-route .pref-stepper,
+.pref-modal--omegle .pref-stepper {
+  background: #ffffff;
+  border-color: #cccccc;
+}
+
+body.omegle-route .pref-stepper-btn,
+.pref-modal--omegle .pref-stepper-btn {
+  background: #f5f5f5;
+  border-color: #cccccc;
+  color: #333333;
+}
+
+body.omegle-route .pref-stepper-input,
+.pref-modal--omegle .pref-stepper-input {
+  color: #333333;
+}
+
+body.omegle-route .pref-modal-done,
+.pref-modal--omegle .pref-modal-done {
+  background: #ff6600;
+  color: #ffffff;
+  box-shadow: none;
+}
+
+body.omegle-route .pref-modal-done:hover,
+.pref-modal--omegle .pref-modal-done:hover {
+  background: #e55a00;
+}
+
+/* ── Media permission gate ── */
+body.omegle-route .media-permission-gate,
+.media-permission-gate--omegle {
+  background: rgba(255, 255, 255, 0.98);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+body.omegle-route .media-permission-gate-title,
+.media-permission-gate--omegle .media-permission-gate-title {
+  color: #000000;
+}
+
+body.omegle-route .media-permission-gate-desc,
+body.omegle-route .media-permission-gate-perm span,
+.media-permission-gate--omegle .media-permission-gate-desc,
+.media-permission-gate--omegle .media-permission-gate-perm span {
+  color: #666666;
+}
+
+body.omegle-route .media-permission-gate-perm,
+.media-permission-gate--omegle .media-permission-gate-perm {
+  background: #f5f5f5;
+  border-color: #e0e0e0;
+}
+
+body.omegle-route .media-permission-gate-perm strong,
+.media-permission-gate--omegle .media-permission-gate-perm strong {
+  color: #333333;
+}
+
+body.omegle-route .media-permission-gate-perm-icon,
+.media-permission-gate--omegle .media-permission-gate-perm-icon {
+  background: #ffffff;
+  border-color: #cccccc;
+  color: #ff6600;
+}
+
+body.omegle-route .media-permission-gate-error,
+.media-permission-gate--omegle .media-permission-gate-error {
+  background: #fff5f5;
+  border-color: #f5c6c6;
+  color: #cc3333;
+}
+
+body.omegle-route .media-permission-gate-steps,
+.media-permission-gate--omegle .media-permission-gate-steps {
+  color: #cc3333;
+}
+
+body.omegle-route .media-permission-gate-steps strong,
+.media-permission-gate--omegle .media-permission-gate-steps strong {
+  color: #993333;
+}
+
+body.omegle-route .media-permission-gate-btn,
+.media-permission-gate--omegle .media-permission-gate-btn {
+  background: #ff6600;
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(255, 102, 0, 0.25);
+}
+
+body.omegle-route .media-permission-gate-btn:hover:not(:disabled),
+.media-permission-gate--omegle .media-permission-gate-btn:hover:not(:disabled) {
+  background: #e55a00;
+  transform: none;
+}
+
+body.omegle-route .media-permission-gate-spinner,
+.media-permission-gate--omegle .media-permission-gate-spinner {
+  border-color: rgba(255, 255, 255, 0.35);
+  border-top-color: #ffffff;
+}
+
+/* ── Report dialog ── */
+body.omegle-route .report-modal,
+.report-modal--omegle {
+  background: #ffffff;
+  border-color: #cccccc;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+  color: #333333;
+}
+
+body.omegle-route .report-modal-head,
+body.omegle-route .report-modal-foot,
+.report-modal--omegle .report-modal-head,
+.report-modal--omegle .report-modal-foot {
+  border-color: #e0e0e0;
+}
+
+body.omegle-route .report-modal-back,
+.report-modal--omegle .report-modal-back {
+  background: #f5f5f5;
+  color: #333333;
+}
+
+body.omegle-route .report-modal-eyebrow,
+body.omegle-route .report-modal-lead,
+body.omegle-route .report-modal-loading,
+.report-modal--omegle .report-modal-eyebrow,
+.report-modal--omegle .report-modal-lead,
+.report-modal--omegle .report-modal-loading {
+  color: #666666;
+}
+
+body.omegle-route .report-modal-head h2,
+.report-modal--omegle .report-modal-head h2 {
+  color: #000000;
+}
+
+body.omegle-route .report-modal-step-dot.is-active,
+body.omegle-route .report-modal-step-dot.is-done,
+.report-modal--omegle .report-modal-step-dot.is-active,
+.report-modal--omegle .report-modal-step-dot.is-done {
+  background: #ff6600;
+}
+
+body.omegle-route .report-reason-item,
+.report-modal--omegle .report-reason-item {
+  background: #ffffff;
+  border-color: #cccccc;
+  color: #333333;
+}
+
+body.omegle-route .report-reason-item.is-selected,
+.report-modal--omegle .report-reason-item.is-selected {
+  border-color: #ff6600;
+  background: rgba(255, 102, 0, 0.1);
+}
+
+body.omegle-route .report-modal-textarea,
+.report-modal--omegle .report-modal-textarea {
+  background: #ffffff;
+  border-color: #cccccc;
+  color: #333333;
+}
+
+body.omegle-route .report-modal-textarea:focus,
+.report-modal--omegle .report-modal-textarea:focus {
+  border-color: #ff6600;
+}
+
+body.omegle-route .report-photo-add,
+.report-modal--omegle .report-photo-add {
+  border-color: #cccccc;
+  color: #666666;
+}
+
+body.omegle-route .report-photo-list li,
+.report-modal--omegle .report-photo-list li {
+  background: #f5f5f5;
+  color: #333333;
+}
+
+body.omegle-route .report-modal-error,
+.report-modal--omegle .report-modal-error {
+  background: #fff5f5;
+  color: #cc3333;
+}
+
+body.omegle-route .report-modal-next,
+.report-modal--omegle .report-modal-next {
+  background: #ff6600;
+  color: #ffffff;
+}
+
+body.omegle-route .report-modal-next:hover:not(:disabled),
+.report-modal--omegle .report-modal-next:hover:not(:disabled) {
+  background: #e55a00;
+}
+
+body.omegle-route .report-reason-item.is-selected .text-\[var\(--primary\)\],
+.report-modal--omegle .report-reason-item.is-selected .text-\[var\(--primary\)\] {
+  color: #ff6600 !important;
+}

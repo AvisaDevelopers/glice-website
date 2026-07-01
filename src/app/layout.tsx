@@ -1,20 +1,12 @@
-import type { Metadata } from "next";
 import { SiteChrome } from "@/components/layout/site-chrome";
+import { JsonLd } from "@/components/seo/json-ld";
 import { getServerSessionUser } from "@/features/auth/lib/get-server-session";
+import { buildRootMetadataDefaults } from "@/lib/seo/build-metadata";
+import { buildHomeSchemas } from "@/lib/seo/structured-data";
 import { Providers } from "@/providers";
 import "./globals.css";
 
-export const metadata: Metadata = {
-  title: {
-    default: "Glice - Live Random Video Chat. Real Connections.",
-    template: "%s - Glice",
-  },
-  description:
-    "Glice is a live random video chat and social discovery app with mutual matching, nearby discovery, and safer conversations.",
-  icons: {
-    icon: "/icons/logo.png",
-  },
-};
+export const metadata = buildRootMetadataDefaults();
 
 export default async function RootLayout({
   children,
@@ -33,6 +25,7 @@ export default async function RootLayout({
         />
       </head>
       <body>
+        <JsonLd data={buildHomeSchemas()} />
         <Providers initialUser={initialUser}>
           <SiteChrome>{children}</SiteChrome>
         </Providers>

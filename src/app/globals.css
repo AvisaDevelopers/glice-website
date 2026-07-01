@@ -1,7 +1,9 @@
 @import "tailwindcss";
 @import "../styles/fonts.css" layer(base);
 @import "../styles/theme.css" layer(components);
+@import "../styles/seo-landing.css" layer(components);
 @import "../styles/chat.css" layer(components);
+@import "../styles/omegle-modals.css" layer(components);
 
 @theme inline {
   --color-background: #111111;

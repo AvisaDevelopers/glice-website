@@ -5188,15 +5188,38 @@ body:not(.is-logged-in) .hero-user-ui { display: none; }
     transform: translateY(12px);
     transition: opacity .5s ease, transform .5s ease;
 }
+.reveal-stagger-0 { transition-delay: 0ms; }
+.reveal-stagger-1 { transition-delay: 40ms; }
+.reveal-stagger-2 { transition-delay: 80ms; }
+.reveal-stagger-3 { transition-delay: 120ms; }
+.reveal-stagger-4 { transition-delay: 160ms; }
+.reveal-stagger-5 { transition-delay: 200ms; }
+.reveal-stagger-6 { transition-delay: 240ms; }
 .reveal.is-visible {
     opacity: 1;
     transform: translateY(0);
 }
+.reveal.reveal-stagger-0 { transition-delay: 0ms; }
+.reveal.reveal-stagger-1 { transition-delay: 40ms; }
+.reveal.reveal-stagger-2 { transition-delay: 80ms; }
+.reveal.reveal-stagger-3 { transition-delay: 120ms; }
+.reveal.reveal-stagger-4 { transition-delay: 160ms; }
+.reveal.reveal-stagger-5 { transition-delay: 200ms; }
+.reveal.reveal-stagger-6 { transition-delay: 240ms; }
 @media (prefers-reduced-motion: reduce) {
     .reveal {
         opacity: 1;
         transform: none;
         transition: none;
+    }
+    .reveal.reveal-stagger-0,
+    .reveal.reveal-stagger-1,
+    .reveal.reveal-stagger-2,
+    .reveal.reveal-stagger-3,
+    .reveal.reveal-stagger-4,
+    .reveal.reveal-stagger-5,
+    .reveal.reveal-stagger-6 {
+        transition-delay: 0ms;
     }
 }
 
@@ -5476,6 +5499,15 @@ body:not(.is-logged-in) .hero-user-ui { display: none; }
     line-height: 1.65;
     font-size: .9375rem;
 }
+
+/* SEO landing — light variant FAQ */
+.seo-faq-item--light {
+    background: #fff;
+    border-color: rgba(0, 0, 0, 0.08);
+}
+.seo-faq-item--light.is-open { border-color: rgba(0, 0, 0, 0.14); }
+.seo-faq-item--light .faq-trigger { color: #171717; }
+.seo-faq-item--light .faq-content > div { color: #525252; }
 
 /* Tips grid */
 .tip {

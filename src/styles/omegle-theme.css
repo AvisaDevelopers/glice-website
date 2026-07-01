@@ -1,0 +1,1069 @@
+/* Omegle alternative — call UI: white + orange (#FF6600) only */
+
+body.omegle-route {
+  background: #ffffff;
+  color: #333333;
+}
+
+.omegle-page {
+  min-height: 100vh;
+  min-height: 100dvh;
+  background: #ffffff;
+  color: #333333;
+  font-family: var(--font-sans, system-ui, -apple-system, "Segoe UI", sans-serif);
+}
+
+.omegle-page--modern {
+  --omegle-header: 56px;
+  --omegle-toolbar: 80px;
+  --omegle-landing-controls: 0px;
+}
+
+.omegle-page--session,
+.omegle-page--logged-in {
+  background: #ffffff;
+}
+
+.omegle-page--logged-in.omegle-page--session {
+  background: #f0f0f0;
+}
+
+.omegle-page--logged-in {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+.omegle-page--modern.omegle-page--logged-in {
+  min-height: 100dvh;
+}
+
+.omegle-page--modern:not(.omegle-page--logged-in):not(.omegle-page--session) {
+  --omegle-landing-controls: 72px;
+}
+
+/* ── Slim sticky header ── */
+.omegle-mini-header {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  min-height: var(--omegle-header, 56px);
+  padding: 0 20px;
+  background: #ffffff;
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.08);
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  flex-shrink: 0;
+}
+
+.omegle-mini-header__logo {
+  margin: 0;
+  padding: 0;
+  line-height: 1;
+}
+
+.omegle-mini-header__logo .omegle-logo__mark {
+  font-size: 1.5rem;
+}
+
+.omegle-mini-header__tagline {
+  margin: 0;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: #333333;
+}
+
+/* ── Landing header ── */
+.omegle-landing {
+  position: relative;
+  z-index: 10;
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 16px 16px 0;
+}
+
+.omegle-header {
+  text-align: center;
+  margin-bottom: 12px;
+  position: relative;
+  z-index: 2;
+}
+
+.omegle-logo {
+  margin: 0;
+  padding: 0;
+  line-height: 1;
+}
+
+.omegle-logo__mark {
+  display: inline-block;
+  font-size: clamp(2rem, 6vw, 2.75rem);
+  font-weight: 800;
+  color: #ff6600;
+  -webkit-text-fill-color: #ff6600;
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+
+.omegle-page-logo {
+  margin: 0;
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: #ff6600;
+  -webkit-text-fill-color: #ff6600;
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+
+.omegle-page-tagline {
+  margin: 8px 0 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #333333;
+}
+
+/* ── Compact landing controls (logged out) ── */
+.omegle-landing-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 12px 20px;
+  padding: 12px 20px;
+  background: #ffffff;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  flex-shrink: 0;
+}
+
+.omegle-landing-controls .omegle-mode-label {
+  margin: 0;
+}
+
+.omegle-landing-controls .omegle-page-controls {
+  max-width: none;
+  width: auto;
+  text-align: left;
+}
+
+.omegle-landing-controls .omegle-age-hint {
+  margin: 4px 0 0;
+}
+
+.omegle-mode-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: #ff6600;
+}
+
+.omegle-mode-label i {
+  font-size: 1.125rem;
+}
+
+/* ── Age gate ── */
+.omegle-page-controls {
+  width: 100%;
+  max-width: 520px;
+  text-align: center;
+}
+
+.omegle-age-row {
+  display: inline-flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 0.875rem;
+  color: #333333;
+  cursor: pointer;
+  user-select: none;
+  text-align: left;
+}
+
+.omegle-age-row input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  margin-top: 2px;
+  flex-shrink: 0;
+  accent-color: #ff6600;
+  cursor: pointer;
+}
+
+.omegle-age-row a {
+  color: #ff6600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.omegle-age-hint {
+  margin: 8px 0 0;
+  font-size: 0.8125rem;
+  color: #cc3333;
+}
+
+/* ── Start button — orange pill ── */
+.omegle-start-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 140px;
+  padding: 12px 32px;
+  border: none;
+  border-radius: 9999px;
+  background: #ff6600;
+  color: #ffffff;
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(255, 102, 0, 0.35);
+  transition: background 0.15s ease, box-shadow 0.15s ease;
+}
+
+.omegle-start-btn:hover:not(:disabled) {
+  background: #e55a00;
+  box-shadow: 0 6px 18px rgba(255, 102, 0, 0.4);
+}
+
+.omegle-start-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* ── Video area — full viewport width ── */
+.omegle-video-wrap {
+  position: relative;
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+}
+
+.omegle-page--modern .omegle-video-wrap {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  width: 100%;
+}
+
+.omegle-page--modern.omegle-page--logged-in .omegle-video-wrap {
+  overflow: hidden;
+}
+
+/* ── Disclaimer ── */
+.omegle-disclaimer {
+  margin: 0 auto 0;
+  max-width: 720px;
+  padding: 8px 20px 16px;
+  font-size: 0.75rem;
+  line-height: 1.6;
+  color: #666666;
+  text-align: center;
+}
+
+.omegle-disclaimer a {
+  color: #ff6600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.omegle-disclaimer a:hover {
+  color: #e55a00;
+}
+
+/* ── Rich SEO content sections — orange + white + light gray only ── */
+.omegle-rich-seo {
+  --omegle-bg-gray: #f5f5f5;
+  --omegle-bg-orange-tint: #fff5eb;
+  --omegle-text: #333333;
+  --omegle-text-muted: #555555;
+  --omegle-border: #e0e0e0;
+  font-size: 1.125rem;
+  line-height: 1.7;
+  color: var(--omegle-text);
+}
+
+.omegle-rich-inner {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+.omegle-rich-section {
+  padding: 64px 0;
+}
+
+.omegle-rich-section--white {
+  background: #ffffff;
+}
+
+.omegle-rich-section--gray {
+  background: var(--omegle-bg-gray);
+}
+
+.omegle-rich-section--safety {
+  background: var(--omegle-bg-orange-tint);
+  color: var(--omegle-text);
+}
+
+.omegle-rich-section--safety + .omegle-rich-section {
+  padding-top: 64px;
+}
+
+.omegle-rich-section--cta {
+  background: #ff6600;
+  color: #ffffff;
+  padding-bottom: 80px;
+}
+
+.omegle-rich-h1 {
+  margin: 0 0 20px;
+  font-size: clamp(2.5rem, 5vw, 3.5rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+  color: #000000;
+}
+
+.omegle-rich-h2 {
+  margin: 0 0 16px;
+  font-size: clamp(1.75rem, 3vw, 2.5rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  color: #000000;
+}
+
+.omegle-rich-h2--light {
+  color: #ffffff;
+}
+
+.omegle-rich-eyebrow {
+  display: inline-block;
+  margin-bottom: 12px;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #ff6600;
+}
+
+.omegle-rich-lede {
+  margin: 0 0 16px;
+  font-size: 1.125rem;
+  line-height: 1.75;
+  color: var(--omegle-text-muted);
+}
+
+.omegle-rich-lede:last-child {
+  margin-bottom: 0;
+}
+
+.omegle-rich-lede--spaced {
+  margin-bottom: 32px;
+}
+
+.omegle-rich-lede--light {
+  color: rgba(255, 255, 255, 0.88);
+}
+
+.omegle-rich-bullets {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 24px;
+}
+
+@media (min-width: 640px) {
+  .omegle-rich-bullets {
+    grid-template-columns: 1fr 1fr;
+    gap: 28px 32px;
+  }
+}
+
+.omegle-rich-bullets li {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.omegle-rich-bullets h3 {
+  margin: 0 0 6px;
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: #000000;
+}
+
+.omegle-rich-bullets p {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.65;
+  color: var(--omegle-text-muted);
+}
+
+.omegle-rich-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  margin-bottom: 16px;
+  background: rgba(255, 102, 0, 0.12);
+  border: 1px solid rgba(255, 102, 0, 0.28);
+  color: #ff6600;
+  font-size: 1.25rem;
+}
+
+.omegle-rich-grid {
+  display: grid;
+  gap: 20px;
+  align-items: stretch;
+}
+
+.omegle-rich-grid--2col {
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 640px) {
+  .omegle-rich-grid--2col {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.omegle-rich-grid--4col {
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 640px) {
+  .omegle-rich-grid--4col {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (min-width: 960px) {
+  .omegle-rich-grid--4col {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.omegle-rich-card {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: #ffffff;
+  border: 1px solid var(--omegle-border);
+  border-radius: 14px;
+  padding: 24px;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.omegle-rich-card:hover {
+  border-color: rgba(255, 102, 0, 0.35);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+}
+
+.omegle-rich-card .omegle-rich-icon {
+  margin-bottom: 16px;
+}
+
+.omegle-rich-card h3 {
+  margin: 0 0 8px;
+  min-height: 3rem;
+  font-size: 1.125rem;
+  font-weight: 700;
+  line-height: 1.3;
+  color: #000000;
+}
+
+.omegle-rich-card p {
+  margin: 0;
+  flex: 1;
+  font-size: 1rem;
+  line-height: 1.65;
+  color: var(--omegle-text-muted);
+}
+
+.omegle-rich-card--compact {
+  padding: 24px;
+}
+
+.omegle-rich-safety-list {
+  list-style: none;
+  margin: 28px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 14px;
+}
+
+@media (min-width: 640px) {
+  .omegle-rich-safety-list {
+    grid-template-columns: 1fr 1fr;
+    gap: 16px 24px;
+  }
+}
+
+.omegle-rich-safety-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  font-size: 1.0625rem;
+  line-height: 1.6;
+  color: var(--omegle-text);
+}
+
+.omegle-rich-safety-list i {
+  flex-shrink: 0;
+  margin-top: 3px;
+  font-size: 1.25rem;
+  color: #ff6600;
+}
+
+.omegle-rich-inner--faq {
+  max-width: 800px;
+}
+
+.omegle-rich-faq details {
+  background: #ffffff;
+  border: 1px solid var(--omegle-border);
+  border-radius: 12px;
+  margin-bottom: 10px;
+  overflow: hidden;
+  transition: border-color 0.15s ease;
+}
+
+.omegle-rich-faq details[open] {
+  border-color: #ff6600;
+}
+
+.omegle-rich-faq summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px 22px;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #222222;
+  cursor: pointer;
+  list-style: none;
+}
+
+.omegle-rich-faq summary::-webkit-details-marker {
+  display: none;
+}
+
+.omegle-rich-faq details[open] .omegle-rich-faq-icon {
+  transform: rotate(45deg);
+}
+
+.omegle-rich-faq-icon {
+  flex-shrink: 0;
+  font-size: 1.375rem;
+  color: #888888;
+  transition: transform 0.2s ease;
+}
+
+.omegle-rich-faq p {
+  margin: 0;
+  padding: 0 22px 20px;
+  font-size: 1.0625rem;
+  line-height: 1.7;
+  color: var(--omegle-text-muted);
+}
+
+.omegle-rich-inner--cta {
+  text-align: center;
+  max-width: 720px;
+}
+
+.omegle-rich-cta-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  margin-top: 28px;
+}
+
+.omegle-rich-cta-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 28px;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.omegle-rich-cta-btn--primary {
+  background: #ffffff;
+  color: #ff6600;
+  border: 2px solid #ffffff;
+}
+
+.omegle-rich-cta-btn--primary:hover {
+  background: #f5f5f5;
+  border-color: #f5f5f5;
+  color: #e55a00;
+}
+
+.omegle-rich-cta-btn--ghost {
+  background: transparent;
+  color: #ffffff;
+  border: 2px solid rgba(255, 255, 255, 0.65);
+}
+
+.omegle-rich-cta-btn--ghost:hover {
+  border-color: #ffffff;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+/* ── VideoHero omegle variant — modern fullscreen layout ── */
+.video-hero--omegle {
+  background: transparent;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-height: 0;
+  padding: 0;
+  overflow: visible;
+}
+
+.video-hero--omegle .video-hero-inner {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 16px 16px 0;
+  min-height: 0;
+}
+
+.video-hero--omegle .hero-dual-shell {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  gap: 0;
+  min-height: 0;
+}
+
+.video-hero--omegle .hero-dual-wrap {
+  flex: 1;
+  min-height: calc(
+    100dvh - var(--omegle-header, 56px) - var(--omegle-landing-controls, 0px) -
+      var(--omegle-toolbar, 80px) - 32px
+  );
+  display: flex;
+  flex-direction: column;
+}
+
+.video-hero--omegle .hero-dual {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  flex: 1;
+  width: 100%;
+  height: 100%;
+  min-height: 240px;
+  border: none;
+  border-radius: 0;
+  overflow: visible;
+}
+
+.video-hero--omegle .hero-panel {
+  background: #f0f0f0;
+  border: 1px solid #e0e0e0;
+  border-radius: 16px;
+  overflow: hidden;
+  height: 100%;
+  min-height: 0;
+  aspect-ratio: auto;
+  box-shadow: none;
+}
+
+.video-hero--omegle .hero-panel--local {
+  border: none;
+}
+
+/* Floating glass panel labels */
+.video-hero--omegle .hero-panel-omegle-tag {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 6;
+  padding: 6px 12px;
+  border-radius: 9999px;
+  background: #ffffff;
+  border: 1px solid #e0e0e0;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #333333;
+  text-transform: capitalize;
+  pointer-events: none;
+}
+
+.video-hero--omegle .hero-panel-badge--omegle {
+  top: 12px;
+  right: 12px;
+  left: auto;
+  padding: 6px 12px;
+  border-radius: 9999px;
+  background: #ffffff;
+  border: 1px solid #e0e0e0;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #333333;
+  gap: 6px;
+}
+
+.video-hero--omegle .hero-panel-badge--omegle .hero-panel-badge-dot {
+  width: 6px;
+  height: 6px;
+  background: #cccccc;
+}
+
+.video-hero--omegle .hero-panel-badge--omegle.hero-panel-badge--active .hero-panel-badge-dot {
+  background: #ff6600;
+}
+
+.video-hero--omegle .hero-panel-badge--omegle .hero-panel-badge-meta {
+  padding: 2px 8px;
+  border-radius: 9999px;
+  background: #f0f0f0;
+  font-size: 0.6875rem;
+  color: #666666;
+}
+
+.video-hero--omegle .hero-panel-badge--local.hero-panel-badge--omegle {
+  display: none;
+}
+
+.video-hero--omegle .hero-panel video,
+.video-hero--omegle .hero-panel-media video,
+.video-hero--omegle .hero-video-cell video {
+  object-fit: cover;
+  object-position: center center;
+  width: 100%;
+  height: 100%;
+}
+
+.video-hero--omegle .hero-video-cell {
+  background: #f0f0f0;
+  border-radius: 16px;
+}
+
+.video-hero--omegle .hero-video-stage {
+  gap: 12px;
+  border-radius: 16px;
+}
+
+/* Idle state — light panels */
+.video-hero--omegle .hero-panel-idle {
+  color: #666666;
+  gap: 10px;
+}
+
+.video-hero--omegle .hero-panel-idle-icon {
+  background: #ffffff;
+  border: 1px solid #e0e0e0;
+  color: #ff6600;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+}
+
+.video-hero--omegle .hero-panel-idle--remote .hero-panel-idle-icon {
+  background: #ffffff;
+  border-color: #e0e0e0;
+  color: #ff6600;
+}
+
+.video-hero--omegle .hero-panel-idle p {
+  color: #333333;
+  font-size: 0.9375rem;
+}
+
+.video-hero--omegle .hero-panel-idle span {
+  color: #666666;
+  font-size: 0.8125rem;
+}
+
+.video-hero--omegle .hero-panel-idle-joined {
+  color: #ff6600;
+  font-size: 0.8125rem;
+}
+
+.video-hero--omegle .hero-panel-idle-online {
+  color: #ff6600;
+  background: rgba(255, 102, 0, 0.1);
+  border: 1px solid rgba(255, 102, 0, 0.25);
+  font-size: 0.75rem;
+  padding: 5px 12px;
+  border-radius: 9999px;
+}
+
+/* Error banner */
+.video-hero--omegle .hero-call-error {
+  margin: 0 0 12px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: #fff3f3;
+  border: 1px solid #ffcccc;
+  color: #cc0000;
+  font-size: 0.875rem;
+}
+
+/* Static toolbar — in document flow below video panels */
+.video-hero--omegle .hero-toolbar--omegle {
+  position: relative;
+  flex-shrink: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  margin: 12px 0 0;
+  padding: 14px 20px;
+  padding-bottom: max(14px, env(safe-area-inset-bottom));
+  background: #ffffff;
+  border-top: 1px solid #e0e0e0;
+  box-shadow: none;
+}
+
+.video-hero--omegle .hero-toolbar-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 48px;
+  padding: 0 18px;
+  border: 1px solid #e0e0e0;
+  border-radius: 9999px;
+  background: #ffffff;
+  color: #333333;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+  cursor: pointer;
+  transition: background 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+.video-hero--omegle .hero-toolbar-btn i {
+  color: #333333;
+}
+
+.video-hero--omegle .hero-toolbar-gender-fallback {
+  color: #ff6600;
+}
+
+.video-hero--omegle .hero-toolbar-gender-icon {
+  filter: brightness(0) saturate(100%) invert(42%) sepia(98%) saturate(2928%)
+    hue-rotate(1deg) brightness(102%) contrast(104%);
+}
+
+.video-hero--omegle .hero-toolbar-btn:hover:not(:disabled) {
+  background: #f5f5f5;
+  border-color: #d0d0d0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.video-hero--omegle .hero-toolbar-btn--start {
+  background: #ff6600;
+  color: #ffffff;
+  border-color: #ff6600;
+  font-weight: 700;
+  font-size: 1rem;
+  min-height: 48px;
+  min-width: 128px;
+  padding: 0 28px;
+  border-radius: 9999px;
+  box-shadow: 0 4px 14px rgba(255, 102, 0, 0.35);
+}
+
+.video-hero--omegle .hero-toolbar-btn--start i {
+  color: #ffffff;
+}
+
+.video-hero--omegle .hero-toolbar-btn--start:hover:not(:disabled) {
+  background: #e55a00;
+  border-color: #e55a00;
+  box-shadow: 0 6px 18px rgba(255, 102, 0, 0.4);
+}
+
+.video-hero--omegle .hero-toolbar-btn--next {
+  background: #ff6600;
+  color: #ffffff;
+  border-color: #ff6600;
+  border-radius: 9999px;
+  box-shadow: 0 4px 14px rgba(255, 102, 0, 0.35);
+}
+
+.video-hero--omegle .hero-toolbar-btn--next i {
+  color: #ffffff;
+}
+
+.video-hero--omegle .hero-toolbar-btn--next:hover:not(:disabled) {
+  background: #e55a00;
+  border-color: #e55a00;
+}
+
+.video-hero--omegle .hero-toolbar-btn--end {
+  border-radius: 50%;
+  width: 48px;
+  height: 48px;
+  padding: 0;
+  background: #ffffff;
+  color: #cc3333;
+}
+
+.video-hero--omegle .hero-toolbar--omegle:not(:has(.hero-toolbar-btn--start)) .hero-toolbar-btn:not(.hero-toolbar-btn--next):not(.hero-toolbar-btn--end) {
+  width: 48px;
+  height: 48px;
+  padding: 0;
+  border-radius: 50%;
+}
+
+.video-hero--omegle .hero-toolbar-hint {
+  width: 100%;
+  text-align: center;
+  color: #666666;
+  font-size: 0.9375rem;
+  padding: 4px 8px;
+}
+
+.video-hero--omegle .hero-toolbar-menu {
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+.video-hero--omegle .hero-toolbar-menu-item {
+  color: #333333;
+  border-radius: 8px;
+}
+
+.video-hero--omegle .hero-toolbar-menu-item.is-active,
+.video-hero--omegle .hero-toolbar-menu-item:hover {
+  background: #f0f0f0;
+  color: #000000;
+}
+
+.video-hero--omegle .hero-toolbar-menu-item.is-active {
+  color: #ff6600;
+  font-weight: 600;
+}
+
+.video-hero--omegle .ar-filter-rail {
+  opacity: 0.9;
+  transform: scale(0.92);
+  transform-origin: bottom center;
+}
+
+.video-hero--omegle .ar-filter-lens-ring {
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+.video-hero--omegle .ar-filter-lens.is-active .ar-filter-lens-ring {
+  border-color: #ff6600;
+}
+
+.video-hero--omegle .media-permission-gate {
+  background: rgba(255, 255, 255, 0.98);
+  border-radius: 16px;
+}
+
+.video-hero--omegle .media-permission-motion-label {
+  color: #333333;
+}
+
+.video-hero--omegle .media-permission-motion-sublabel {
+  color: #666666;
+}
+
+.video-hero--omegle .hero-feedback-btn--like {
+  background: #ff6600;
+  border-color: #ff6600;
+  color: #ffffff;
+}
+
+.video-hero--omegle .vc-connected-badge {
+  background: rgba(255, 102, 0, 0.92);
+  color: #ffffff;
+  border-radius: 9999px;
+}
+
+@media (max-width: 639px) {
+  .omegle-mini-header {
+    padding: 0 14px;
+    gap: 6px 10px;
+  }
+
+  .omegle-mini-header__logo .omegle-logo__mark {
+    font-size: 1.25rem;
+  }
+
+  .omegle-mini-header__tagline {
+    font-size: 0.875rem;
+  }
+
+  .omegle-landing-controls {
+    flex-direction: column;
+    padding: 10px 14px;
+    gap: 10px;
+  }
+
+  .omegle-landing-controls .omegle-page-controls {
+    text-align: center;
+  }
+
+  .video-hero--omegle .video-hero-inner {
+    padding: 12px 12px 0;
+  }
+
+  .video-hero--omegle .hero-dual {
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .video-hero--omegle .hero-dual-wrap {
+    min-height: calc(
+      100dvh - var(--omegle-header, 56px) - var(--omegle-landing-controls, 0px) -
+        var(--omegle-toolbar, 80px) - 24px
+    );
+  }
+
+  .video-hero--omegle .hero-toolbar--omegle {
+    padding: 12px 14px;
+    padding-bottom: max(12px, env(safe-area-inset-bottom));
+    gap: 8px;
+  }
+
+  .video-hero--omegle .hero-toolbar-btn--start {
+    flex: 1 1 100%;
+    min-width: 0;
+  }
+}

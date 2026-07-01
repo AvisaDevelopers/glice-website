@@ -228,7 +228,11 @@ export function UiSessionProvider({
   useEffect(() => {
     const body = document.body;
     body.classList.toggle("is-logged-in", isLoggedIn);
-    body.classList.toggle("video-hero-active", pathname === "/");
+    body.classList.toggle(
+      "video-hero-active",
+      pathname === "/" ||
+        pathname.startsWith("/talk-to-strangers/omegle"),
+    );
   }, [isLoggedIn, pathname]);
 
 

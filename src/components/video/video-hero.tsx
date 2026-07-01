@@ -106,7 +106,15 @@ function bindRemoteStream(
   }
 }
 
-export function VideoHero() {
+type VideoHeroProps = {
+  variant?: "default" | "omegle";
+  startDisabled?: boolean;
+};
+
+export function VideoHero({
+  variant = "default",
+  startDisabled = false,
+}: VideoHeroProps = {}) {
   const { isLoggedIn, openAuth, user } = useUiSession();
   const {
     attachLocalVideo,
@@ -427,7 +435,7 @@ export function VideoHero() {
   return (
     <>
       <section
-        className={`video-hero${isInVideoSession ? " video-hero--session" : ""}`}
+        className={`video-hero${isInVideoSession ? " video-hero--session" : ""}${variant === "omegle" ? " video-hero--omegle" : ""}`}
         id="videoHero"
       >
         <div className="video-hero-inner">
@@ -445,12 +453,16 @@ export function VideoHero() {
                   status={mediaStatus}
                   exiting={permissionGateExiting}
                   onRequest={handlePermissionRequest}
+                  variant={variant}
                 />
               )}
               <div className="hero-dual">
-                <div className="hero-panel hero-panel--remote">
+                <div className={`hero-panel hero-panel--remote${variant === "omegle" ? " hero-panel--omegle" : ""}`}>
+                  {variant === "omegle" && (
+                    <span className="hero-panel-omegle-tag">Stranger</span>
+                  )}
                   <div
-                    className={`hero-panel-badge hero-panel-badge--remote${isBusy || isConnecting || inCall || callStage === "feedback" ? " hero-panel-badge--active" : ""}${showPartnerInBadge ? " hero-panel-badge--with-avatar" : ""}`}
+                    className={`hero-panel-badge hero-panel-badge--remote${isBusy || isConnecting || inCall || callStage === "feedback" ? " hero-panel-badge--active" : ""}${showPartnerInBadge ? " hero-panel-badge--with-avatar" : ""}${variant === "omegle" ? " hero-panel-badge--omegle" : ""}`}
                   >
                     {showPartnerInBadge ? (
                       <span className="hero-panel-badge-avatar" aria-hidden>
@@ -596,8 +608,11 @@ export function VideoHero() {
                   </AnimatePresence>
                 </div>
 
-                <div className="hero-panel hero-panel--local">
-                  <div className="hero-panel-badge hero-panel-badge--local">
+                <div className={`hero-panel hero-panel--local${variant === "omegle" ? " hero-panel--omegle" : ""}`}>
+                  {variant === "omegle" && (
+                    <span className="hero-panel-omegle-tag">You</span>
+                  )}
+                  <div className={`hero-panel-badge hero-panel-badge--local${variant === "omegle" ? " hero-panel-badge--omegle" : ""}`}>
                     <span>You</span>
                     {!cameraEnabled && (
                       <span className="hero-panel-badge-meta hero-panel-badge-meta--warn">
@@ -684,7 +699,11 @@ export function VideoHero() {
               />
             </div>
 
-            <div className="hero-toolbar" role="toolbar" aria-label="Video controls">
+            <div
+              className={`hero-toolbar${variant === "omegle" ? " hero-toolbar--omegle" : ""}`}
+              role="toolbar"
+              aria-label="Video controls"
+            >
               {isConnecting ? (
                 <p className="hero-toolbar-hint">Setting up your video call…</p>
               ) : inCall ? (
@@ -790,7 +809,7 @@ export function VideoHero() {
                     type="button"
                     className="hero-toolbar-btn hero-toolbar-btn--start"
                     onClick={startVideo}
-                    disabled={isBusy}
+                    disabled={isBusy || startDisabled}
                   >
                     <i className="ri-vidicon-fill" aria-hidden />
                     <span>{isBusy ? "Searching…" : "Start"}</span>
@@ -815,6 +834,7 @@ export function VideoHero() {
         onMinAgeChange={setMinAgeBounded}
         onMaxAgeChange={setMaxAgeBounded}
         onCountriesChange={setCountriesBounded}
+        variant={variant}
       />
 
       {partner && roomId && (
@@ -825,10 +845,11 @@ export function VideoHero() {
           reporteeName={partner.name}
           roomId={roomId}
           reporteeEmail={partner.email ?? ""}
+          variant={variant}
         />
       )}
 
-      <AuthModal />
+      <AuthModal variant={variant} />
     </>
   );
 }

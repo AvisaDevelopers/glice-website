@@ -1,13 +1,28 @@
 import { FeatureRow } from "@/components/marketing/feature-row";
 import { MarketingCta } from "@/components/marketing/marketing-cta";
 import { PageHero } from "@/components/marketing/page-hero";
-import type { Metadata } from "next";
+import { MarketingPageJsonLd } from "@/components/seo/marketing-page-json-ld";
+import { buildPageMetadata } from "@/lib/seo/build-metadata";
 
-export const metadata: Metadata = {
-  title: "Features",
+const SEO = {
+  title: "Glice Features — Random Video Chat, Match & Safety",
   description:
-    "Discover Glice features - random live video, mutual matching, nearby discovery, real-time chat, and safety tools.",
-};
+    "Explore Glice features: random live video calls, mutual matching, nearby discovery, real-time chat, profile cards, and built-in safety tools.",
+  path: "/features",
+  pageName: "Features",
+  keywords: [
+    "glice features",
+    "random live video",
+    "mutual matching",
+    "nearby discovery",
+    "video chat safety",
+    "stranger chat app",
+    "profile cards",
+    "real-time chat",
+  ],
+} as const;
+
+export const metadata = buildPageMetadata(SEO);
 
 const FEATURES = [
   {
@@ -102,6 +117,7 @@ const FEATURES = [
 export default function FeaturesPage() {
   return (
     <>
+      <MarketingPageJsonLd {...SEO} />
       <PageHero
         title={
           <>

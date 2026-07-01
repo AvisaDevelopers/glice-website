@@ -4,7 +4,8 @@ import { useMounted } from "@/hooks/use-mounted";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef } from "react";
 
-const REVEAL_BOUND_ATTR = "data-reveal-bound";
+const STAGGER_CLASS_PREFIX = "reveal-stagger-";
+const MAX_STAGGER_INDEX = 6;
 
 function isRevealInView(element: Element): boolean {
   const rect = element.getBoundingClientRect();
@@ -15,15 +16,18 @@ function isRevealInView(element: Element): boolean {
   );
 }
 
-function bindNewRevealElements(observer: IntersectionObserver) {
+function bindNewRevealElements(
+  observer: IntersectionObserver,
+  boundElements: WeakSet<Element>,
+) {
   let delayIndex = document.querySelectorAll(".reveal.is-visible").length;
 
   document.querySelectorAll(".reveal:not(.is-visible)").forEach((element) => {
-    if (element.getAttribute(REVEAL_BOUND_ATTR) === "true") return;
+    if (boundElements.has(element)) return;
 
-    element.setAttribute(REVEAL_BOUND_ATTR, "true");
-    const htmlElement = element as HTMLElement;
-    htmlElement.style.transitionDelay = `${Math.min(delayIndex * 40, 240)}ms`;
+    boundElements.add(element);
+    const staggerIndex = Math.min(delayIndex, MAX_STAGGER_INDEX);
+    element.classList.add(`${STAGGER_CLASS_PREFIX}${staggerIndex}`);
     delayIndex += 1;
 
     if (isRevealInView(element)) {
@@ -39,6 +43,7 @@ export function SiteEffects() {
   const pathname = usePathname();
   const mounted = useMounted();
   const bindScheduledRef = useRef(false);
+  const boundElementsRef = useRef(new WeakSet<Element>());
 
   useEffect(() => {
     if (!mounted) return;
@@ -66,19 +71,21 @@ export function SiteEffects() {
       { threshold: 0.08, rootMargin: "0px 0px -80px 0px" },
     );
 
-    const bindReveals = () => bindNewRevealElements(observer);
+    const bindReveals = () =>
+      bindNewRevealElements(observer, boundElementsRef.current);
 
     const scheduleBindReveals = () => {
       if (bindScheduledRef.current) return;
       bindScheduledRef.current = true;
       requestAnimationFrame(() => {
-        bindScheduledRef.current = false;
-        bindReveals();
+        requestAnimationFrame(() => {
+          bindScheduledRef.current = false;
+          bindReveals();
+        });
       });
     };
 
-    // First bind after hydration — never mutate reveal nodes during SSR/hydration.
-    const initialId = window.setTimeout(scheduleBindReveals, 0);
+    const initialId = window.setTimeout(scheduleBindReveals, 100);
 
     const mutationObserver = new MutationObserver(() => {
       scheduleBindReveals();
@@ -89,9 +96,9 @@ export function SiteEffects() {
         childList: true,
         subtree: true,
       });
-    }, 50);
+    }, 100);
 
-    const retryIds = [150, 400, 800].map((delay) =>
+    const retryIds = [200, 450, 850].map((delay) =>
       window.setTimeout(scheduleBindReveals, delay),
     );
 
@@ -102,12 +109,11 @@ export function SiteEffects() {
       retryIds.forEach(clearTimeout);
       observer.disconnect();
       mutationObserver.disconnect();
-      document
-        .querySelectorAll(`[${REVEAL_BOUND_ATTR}="true"]`)
-        .forEach((element) => {
-          element.removeAttribute(REVEAL_BOUND_ATTR);
-          (element as HTMLElement).style.transitionDelay = "";
-        });
+      document.querySelectorAll(".reveal").forEach((element) => {
+        for (let i = 0; i <= MAX_STAGGER_INDEX; i += 1) {
+          element.classList.remove(`${STAGGER_CLASS_PREFIX}${i}`);
+        }
+      });
     };
   }, [mounted, pathname]);
 

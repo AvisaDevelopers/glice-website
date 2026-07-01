@@ -15,6 +15,35 @@ const nextConfig: NextConfig = {
       },
     ];
   },
+  async redirects() {
+    return [
+      {
+        source: "/talk-to-strangers/omegle-alternative",
+        destination: "/talk-to-strangers/omegle",
+        permanent: true,
+      },
+      {
+        source: "/talk-to-strangers/omegle-alternative/:path*",
+        destination: "/talk-to-strangers/omegle/:path*",
+        permanent: true,
+      },
+      {
+        source: "/talk-to-strangers/monkey-alternative",
+        destination: "/talk-to-strangers/monkey-app",
+        permanent: true,
+      },
+      {
+        source: "/talk-to-strangers/monkey",
+        destination: "/talk-to-strangers/monkey-app",
+        permanent: true,
+      },
+      {
+        source: "/talk-to-strangers/emerald-chat",
+        destination: "/talk-to-strangers/emerald",
+        permanent: true,
+      },
+    ];
+  },
 };
 
 export default nextConfig;

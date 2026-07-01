@@ -1,11 +1,25 @@
 import Link from "next/link";
-import type { Metadata } from "next";
+import { MarketingPageJsonLd } from "@/components/seo/marketing-page-json-ld";
+import { buildPageMetadata } from "@/lib/seo/build-metadata";
 
-export const metadata: Metadata = {
-  title: "Safety Tips",
+const SEO = {
+  title: "Safety Tips — Stay Secure on Glice Video Chat",
   description:
-    "Practical safety tips for live video chat, matching, and messaging on Glice.",
-};
+    "Practical safety tips for live video chat, stranger matching, and messaging on Glice. Protect personal info, report abuse, and stay in control.",
+  path: "/safety-tips",
+  pageName: "Safety Tips",
+  keywords: [
+    "video chat safety tips",
+    "safe stranger chat",
+    "glice safety",
+    "online chat protection",
+    "random chat safety",
+    "report and block",
+    "personal information safety",
+  ],
+} as const;
+
+export const metadata = buildPageMetadata(SEO);
 
 const TIPS = [
   {
@@ -58,6 +72,7 @@ const TIPS = [
 export default function SafetyTipsPage() {
   return (
     <>
+      <MarketingPageJsonLd {...SEO} />
       <section className="hero hero--below-header px-6 pb-12">
         <div className="reveal relative z-10 page-container">
           <h1 className="display-1 balance mt-5 mb-5">Safety Tips.</h1>

@@ -19,6 +19,7 @@ type ReportUserDialogProps = {
   reporteeName: string;
   roomId: string;
   reporteeEmail: string;
+  variant?: "default" | "omegle";
 };
 
 export function ReportUserDialog({
@@ -28,6 +29,7 @@ export function ReportUserDialog({
   reporteeName,
   roomId,
   reporteeEmail,
+  variant = "default",
 }: ReportUserDialogProps) {
   const { user } = useUiSession();
   const [step, setStep] = useState(0);
@@ -109,7 +111,7 @@ export function ReportUserDialog({
   return (
     <>
       <div
-        className={`modal-backdrop${open ? " is-open" : ""}`}
+        className={`modal-backdrop${open ? " is-open" : ""}${variant === "omegle" ? " modal-backdrop--omegle" : ""}`}
         aria-hidden={!open}
         role="dialog"
         aria-labelledby="reportUserTitle"
@@ -117,7 +119,9 @@ export function ReportUserDialog({
           if (e.target === e.currentTarget) handleClose();
         }}
       >
-        <div className="report-modal">
+        <div
+          className={`report-modal${variant === "omegle" ? " report-modal--omegle" : ""}`}
+        >
           <div className="report-modal-head">
             <button
               type="button"
